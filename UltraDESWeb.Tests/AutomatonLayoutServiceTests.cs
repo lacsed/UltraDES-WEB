@@ -71,6 +71,35 @@ public sealed class AutomatonLayoutServiceTests
         Assert.NotEqual(edges[0].ControlY, edges[1].ControlY);
     }
 
+    [Fact]
+    public async Task BarycentricOrderingReducesCrossedEdges()
+    {
+        var q = States(5); var e = Event("go"); var alternate = Event("alternate");
+        var automaton = new DeterministicFiniteAutomaton(new[]
+        {
+            new Transition(q[0], e, q[1]), new Transition(q[0], alternate, q[2]),
+            new Transition(q[1], e, q[4]), new Transition(q[2], e, q[3])
+        }, q[0], "crossings");
+
+        var positions = (await service.CreateAsync(automaton)).States.ToDictionary(item => item.State);
+
+        Assert.True(positions["q4"].Y < positions["q3"].Y);
+    }
+
+    [Fact]
+    public async Task ReverseOnlyReachableStatesStayInCompactRanks()
+    {
+        var q = States(4); var e = Event("go");
+        var automaton = new DeterministicFiniteAutomaton(new[]
+        {
+            new Transition(q[0], e, q[1]), new Transition(q[2], e, q[1]), new Transition(q[3], e, q[2])
+        }, q[0], "reverse");
+
+        var layout = await service.CreateAsync(automaton);
+
+        Assert.True(layout.States.Max(item => item.X) <= 720);
+    }
+
     private static DeterministicFiniteAutomaton Chain(int count)
     {
         var states = States(count); var e = Event("next");

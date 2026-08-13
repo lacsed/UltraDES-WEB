@@ -295,6 +295,54 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }, { passive: false });
 
     render();
+    function download(content, mimeType, extension) {
+        const safeName = (host.closest(".modal-card")?.querySelector(".modal-card-title")?.textContent || "automaton").trim().replace(/[^a-z0-9_-]+/gi, "-");
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        link.download = `${safeName}.${extension}`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    }
+
+    function exportSvg() {
+        const copy = svg.cloneNode(true);
+        copy.setAttribute("xmlns", NS);
+        copy.setAttribute("viewBox", `0 0 ${viewport.canvasWidth} ${viewport.canvasHeight}`);
+        copy.setAttribute("width", viewport.canvasWidth);
+        copy.setAttribute("height", viewport.canvasHeight);
+        copy.querySelectorAll(".transition-hit-area,.transition-control").forEach(item => item.remove());
+        const style = document.createElementNS(NS, "style");
+        style.textContent = `.visual-state circle{fill:#fff;stroke:#1f2937;stroke-width:3}.visual-state text,.visual-transition text{fill:#111827;font:600 14px sans-serif}.visual-transition>path{fill:none;stroke:#374151;stroke-width:2.5}.transition-label rect{fill:#fff;stroke:#3273dc;stroke-width:2}.transition-label.is-uncontrollable rect{stroke:#e53935}.transition-label.is-uncontrollable text{fill:#c62828}.visual-arrow-head{fill:#374151}.initial-arrow{fill:none;stroke:#111827;stroke-width:3}`;
+        copy.prepend(style);
+        download(new XMLSerializer().serializeToString(copy), "image/svg+xml;charset=utf-8", "svg");
+    }
+
+    const texEscape = value => String(value).replace(/([#$%&_{}])/g, "\\$1").replace(/~/g, "\\textasciitilde{}").replace(/\^/g, "\\textasciicircum{}");
+    function exportTikz() {
+        const lines = ["\\begin{tikzpicture}[>=stealth,auto,node distance=2cm,semithick,", "  state/.style={circle,draw,minimum size=16mm},", "  marked/.style={state,double,double distance=2pt}]" ];
+        const ids = new Map(draft.states.map((q, index) => [q.id, `q${index}`]));
+        for (const q of draft.states) {
+            const x = (q.x / 60).toFixed(3), y = ((viewport.canvasHeight - q.y) / 60).toFixed(3);
+            lines.push(`  \\node[${q.marked ? "marked" : "state"}] (${ids.get(q.id)}) at (${x},${y}) {${texEscape(q.name)}};`);
+        }
+        if (draft.initialStateId && ids.has(draft.initialStateId)) lines.push(`  \\draw[->] ([xshift=-14mm]${ids.get(draft.initialStateId)}.west) -- (${ids.get(draft.initialStateId)}.west);`);
+        for (const edge of draft.transitions) {
+            const source = ids.get(edge.sourceId), target = ids.get(edge.targetId);
+            const labels = edge.eventNames.map(name => draft.events.find(e => e.name === name)?.controllable === false ? `\\textcolor{red}{${texEscape(name)}}` : texEscape(name)).join(", ");
+            if (edge.sourceId === edge.targetId) {
+                const state = stateAt(edge.sourceId), side = edge.controlY < state.y ? "above" : "below";
+                lines.push(`  \\path[->] (${source}) edge[loop ${side}] node {${labels}} (${target});`);
+            } else {
+                const a = stateAt(edge.sourceId), b = stateAt(edge.targetId), cross = (b.x-a.x)*(edge.controlY-a.y)-(b.y-a.y)*(edge.controlX-a.x);
+                const midpointX = (a.x+b.x)/2, midpointY = (a.y+b.y)/2, bend = Math.hypot(edge.controlX-midpointX, edge.controlY-midpointY);
+                const option = bend > 10 ? `bend ${cross > 0 ? "left" : "right"}=${Math.min(45, Math.max(10, Math.round(bend / 3)))}` : "";
+                lines.push(`  \\path[->] (${source}) edge[${option}] node {${labels}} (${target});`);
+            }
+        }
+        lines.push("\\end{tikzpicture}", "");
+        download(lines.join("\n"), "text/plain;charset=utf-8", "tex");
+    }
+
     function deleteSelection() {
         if (!selection || layoutOnly) return;
         if (selection.type === "state") { draft.states = draft.states.filter(q => q.id !== selection.id); draft.transitions = draft.transitions.filter(t => t.sourceId !== selection.id && t.targetId !== selection.id); if (draft.initialStateId === selection.id) draft.initialStateId = null; }
@@ -318,6 +366,8 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         },
         getDraft() { commitSelection(); syncEvents(); return structuredClone(draft); },
         getLayout() { return { ...viewport, states: draft.states.map(q => ({ state: q.name, x: q.x, y: q.y })), transitions: draft.transitions.map(t => ({ source: t.sourceId, target: t.targetId, events: t.eventNames, controlX: t.controlX, controlY: t.controlY })) }; },
+        exportSvg,
+        exportTikz,
         dispose() { clearTimeout(touchHoldTimer); clearTimeout(clickRenderTimer); host.replaceChildren(); }
     };
 }

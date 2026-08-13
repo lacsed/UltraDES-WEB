@@ -40,6 +40,11 @@
     }
     <div class="buttons mt-4">
         <button class="button is-success" type="button" @onclick="Save">@(LayoutOnly ? "Save Layout" : "Create Automaton")</button>
+        @if (LayoutOnly)
+        {
+            <button class="button is-link is-light" type="button" @onclick="ExportSvg"><i class="fas fa-file-code mr-2"></i>Export SVG</button>
+            <button class="button is-link is-light" type="button" @onclick="ExportTikz"><i class="fas fa-file-alt mr-2"></i>Export TikZ</button>
+        }
         <button class="button is-danger" type="button" @onclick="OnCancel">Cancel</button>
     </div>
 </div>
@@ -93,6 +98,8 @@
     private Task ToggleControllable() => InvokeEditor("toggleControllability");
     private Task DeleteSelection() => InvokeEditor("deleteSelection");
     private Task EditSelection() => InvokeEditor("editSelection");
+    private Task ExportSvg() => InvokeEditor("exportSvg");
+    private Task ExportTikz() => InvokeEditor("exportTikz");
     private async Task SetTool(string tool)
     {
         if (editor is not null) await editor.InvokeVoidAsync("setTool", tool);
