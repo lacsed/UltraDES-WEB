@@ -92,20 +92,6 @@ footer {
 .quick-grid button:hover { border-color: #b9cdf7; box-shadow: 0 10px 28px rgb(28 49 87 / 9%); transform: translateY(-2px); }
 .quick-grid i { display: grid; place-items: center; width: 40px; height: 40px; flex: none; color: var(--primary); background: #eaf1ff; border-radius: 10px; }
 .quick-grid span { display: flex; min-width: 0; flex-direction: column; }.quick-grid strong { font-size: .9rem; }.quick-grid small { margin-top: .2rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.automata-gallery { grid-column: 1 / -1; min-width: 0; padding-top: 1.5rem; border-top: 1px solid var(--line); }
-.gallery-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-.gallery-heading h3 { margin: .15rem 0 0; color: var(--ink); font-size: 1.4rem; font-weight: 800; letter-spacing: -.03em; }
-.gallery-heading > span { color: var(--muted); font-size: .78rem; }
-.automata-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
-.automaton-card { min-width: 0; overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgb(28 49 87 / 6%); }
-.automaton-card:hover { border-color: #b9cdf7; box-shadow: 0 14px 34px rgb(28 49 87 / 11%); transform: translateY(-2px); }
-.automaton-preview { position: relative; display: block; width: 100%; height: 116px; overflow: hidden; background: linear-gradient(145deg, #f5f8ff, #eaf1ff); border: 0; cursor: pointer; }
-.automaton-preview:disabled { cursor: not-allowed; opacity: .65; }
-.mini-node { position: absolute; z-index: 2; width: 36px; height: 36px; background: white; border: 3px solid var(--primary); border-radius: 50%; }.mini-node-one { top: 42px; left: 25%; }.mini-node-two { top: 25px; right: 24%; border-style: double; border-width: 5px; }
-.mini-edge { position: absolute; top: 53px; left: 37%; width: 30%; height: 2px; background: var(--primary); transform: rotate(-12deg); }.mini-edge::after { position: absolute; top: -4px; right: -2px; content: ""; border-block: 5px solid transparent; border-left: 8px solid var(--primary); }
-.layout-badge { position: absolute; right: .6rem; bottom: .55rem; padding: .25rem .5rem; color: #31517f; font-size: .62rem; font-weight: 700; background: rgb(255 255 255 / 85%); border-radius: 999px; }
-.automaton-card-body { padding: .9rem; }.automaton-card-body h4 { margin: 0; overflow: hidden; color: var(--ink); font-size: .95rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }.automaton-card-body p { margin: .25rem 0 .8rem; color: var(--muted); font-size: .72rem; }
-.card-actions { display: flex; gap: .35rem; }.card-actions button { display: grid; place-items: center; width: 34px; height: 34px; color: #52627c; background: #f4f7fc; border: 0; border-radius: 9px; cursor: pointer; }.card-actions button:hover { color: var(--primary); background: #e7efff; }.card-actions button.danger { margin-left: auto; }.card-actions button.danger:hover { color: #c93636; background: #fff0f0; }
 .app-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem clamp(1rem, 3vw, 3rem); color: var(--muted); font-size: .78rem; background: white; border-top: 1px solid var(--line); }
 .app-footer a { color: var(--primary); font-weight: 700; }
 .modal-card { width: min(760px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); border-radius: 16px; box-shadow: 0 24px 70px rgb(10 24 50 / 28%); }
@@ -141,12 +127,10 @@ footer {
     .workspace-sidebar .menu-label .content-button { display: none; }
     .workspace-sidebar .menu-list { display: none; }
     .workspace-content { flex: 1; padding: 2rem 1rem; overflow: visible; }
-    .welcome-panel { min-height: 0; align-content: start; }
+    .welcome-panel { min-height: 0; }
     .welcome-copy h2 { font-size: clamp(2.2rem, 12vw, 3.4rem); }
     .welcome-actions .button { width: 100%; justify-content: center; }
     .quick-grid { margin-top: 1rem; }
-    .automata-grid { display: flex; margin-inline: -1rem; padding: 0 1rem .5rem; overflow-x: auto; scroll-snap-type: x mandatory; }
-    .automaton-card { min-width: min(78vw, 280px); scroll-snap-align: start; }
     .app-footer { flex-direction: column; text-align: center; }
 }
 

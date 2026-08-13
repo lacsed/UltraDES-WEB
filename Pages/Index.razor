@@ -307,39 +307,6 @@
                         <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
                         <button @onclick="LoadSmallFactory"><i class="fas fa-industry"></i><span><strong>Try an example</strong><small>Load the Small Factory</small></span></button>
                     </div>
-                    @if (automata.Count > 0)
-                    {
-                        <div class="automata-gallery">
-                            <div class="gallery-heading">
-                                <div><span class="eyebrow">Workspace</span><h3>Your automata</h3></div>
-                                <span>@automata.Count @(automata.Count == 1 ? "automaton" : "automata")</span>
-                            </div>
-                            <div class="automata-grid">
-                                @foreach (var item in automata)
-                                {
-                                    var stateCount = item.Value.States.Count();
-                                    var transitionCount = item.Value.Transitions.Count();
-                                    var hasLayout = layouts.ContainsKey(automatonIds[item.Key]);
-                                    <article class="automaton-card">
-                                        <button class="automaton-preview" type="button" @onclick="() => OpenVisualLayout(item.Value)" disabled="@(!CanOpenVisualLayout(item.Value))" aria-label="Open visual layout for @item.Key">
-                                            <span class="mini-node mini-node-one"></span><span class="mini-edge"></span><span class="mini-node mini-node-two"></span>
-                                            <span class="layout-badge"><i class="fas @(hasLayout ? "fa-pen" : "fa-magic")"></i> @(hasLayout ? "Saved layout" : "Auto layout")</span>
-                                        </button>
-                                        <div class="automaton-card-body">
-                                            <h4 title="@item.Key">@item.Key</h4>
-                                            <p>@stateCount states · @transitionCount transitions</p>
-                                            <div class="card-actions">
-                                                <button type="button" title="Open visual layout" @onclick="() => OpenVisualLayout(item.Value)" disabled="@(!CanOpenVisualLayout(item.Value))"><i class="fas fa-edit"></i></button>
-                                                <button type="button" title="Summary" @onclick="() => SummaryAutomaton(item.Value)"><i class="fas fa-list"></i></button>
-                                                <button type="button" title="Show graph" @onclick="() => ShowAutomaton(item.Value)"><i class="fas fa-project-diagram"></i></button>
-                                                <button type="button" class="danger" title="Delete" @onclick="() => RemoveAutomaton(item.Key)"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        </div>
-                                    </article>
-                                }
-                            </div>
-                        </div>
-                    }
                 </div>
                 break;
         }
