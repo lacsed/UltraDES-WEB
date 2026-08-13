@@ -19,6 +19,7 @@
                     <a @onclick="ev => page = Page.CreateState" class="is-mobile dropdown-item">Create State</a>
                     <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
+                    <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
                 </div>
             </div>
         </div>
@@ -62,6 +63,7 @@
                     <a @onclick="ev => page = Page.CreateState" class="is-mobile dropdown-item">Create State</a>
                     <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
+                    <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Operations</p>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
@@ -222,6 +224,9 @@
             case Page.CreateAutomaton:
                 <Modal Title="Create an Automaton" OnClose="@Clear"><CreateAutomaton OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" Events="events" States="states"></CreateAutomaton></Modal>
                 break;
+            case Page.CreateVisualAutomaton:
+                <Modal Title="Create a Visual Automaton" OnClose="@Clear"><VisualAutomatonEditor OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
+                break;
             case Page.ShowAutomaton:
                 <Modal Title="@automaton.Name" OnClose="@Clear">
                     <GraphViz DotCode="@automaton.ToDotCode" OnCancel="@Clear"></GraphViz>
@@ -270,6 +275,7 @@
         CreateState,
         CreateEvent,
         CreateAutomaton,
+        CreateVisualAutomaton,
         ShowAutomaton,
         VerifyOpacityAutomaton,
         AutomatonSummary,
