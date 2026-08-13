@@ -64,7 +64,7 @@ footer {
 .visual-editor-help { margin: 1rem 0; }
 .visual-editor-actions { align-items: center; margin-bottom: .5rem; }
 .visual-editor-legend { margin-left: auto; padding: .4rem; border: 1px solid #b5b5b5; border-radius: 4px; }
-.visual-editor-canvas { width: 100%; height: clamp(420px, 62vh, 680px); overflow: hidden; background: #fafafa; border: 2px solid #b5b5b5; border-radius: 4px; outline: none; }
+.visual-editor-canvas { position: relative; width: 100%; height: clamp(420px, 62vh, 680px); overflow: hidden; background: #fafafa; border: 2px solid #b5b5b5; border-radius: 4px; outline: none; }
 .visual-editor-canvas:focus { border-color: #3273dc; box-shadow: 0 0 0 2px rgb(50 115 220 / 25%); }
 .visual-editor-canvas svg { width: 100%; height: 100%; touch-action: none; user-select: none; }
 .visual-state circle { fill: white; stroke: #1f2937; stroke-width: 3; }
@@ -85,3 +85,8 @@ footer {
 .initial-arrow { fill: none; stroke: #111827; stroke-width: 3; }
 .transition-preview { fill: none; stroke: #1565c0; stroke-width: 2; stroke-dasharray: 6 4; }
 @media (max-width: 768px) { .visual-automaton-editor { min-width: 0; } .visual-editor-legend { margin-left: 0; } }
+.visual-editor-keyboard { position: absolute; width: 1px; height: 1px; opacity: .01; pointer-events: none; left: 0; bottom: 0; }
+.visual-editor-context-menu { position: absolute; z-index: 20; min-width: 11rem; padding: .35rem; border: 1px solid #b5b5b5; border-radius: 6px; background: white; box-shadow: 0 4px 14px rgb(0 0 0 / 20%); }
+.visual-editor-context-menu button { display: block; width: 100%; padding: .45rem .65rem; border: 0; border-radius: 4px; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.visual-editor-context-menu button:hover, .visual-editor-context-menu button:focus { background: #eef5ff; outline: none; }
+.visual-editor-context-menu button.is-danger { color: #b42318; }
