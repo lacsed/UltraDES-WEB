@@ -2,19 +2,67 @@ const NS = "http://www.w3.org/2000/svg";
 
 export function createAutomatonEditor(host, layoutOnly = false) {
     const draft = { states: [], events: [], transitions: [], initialStateId: null };
-    let selection = null, drag = null, preview = null, activeTool = "select", transitionSourceId = null, suppressNextDoubleClick = false, clickRenderTimer = null, lastClick = null;
+    let selection = null, drag = null, preview = null, activeTool = "select", transitionSourceId = null, suppressNextDoubleClick = false, clickRenderTimer = null, lastClick = null, touchHoldTimer = null;
     let viewport = { canvasWidth: 900, canvasHeight: 520, zoom: 1, panX: 0, panY: 0 };
     const svg = document.createElementNS(NS, "svg");
     const updateViewBox = () => svg.setAttribute("viewBox", `${viewport.panX} ${viewport.panY} ${viewport.canvasWidth / viewport.zoom} ${viewport.canvasHeight / viewport.zoom}`);
     updateViewBox();
     svg.setAttribute("aria-label", "Automaton diagram");
     host.append(svg);
+    const keyboard = document.createElement("input");
+    keyboard.className = "visual-editor-keyboard"; keyboard.setAttribute("aria-label", "Edit selected item"); keyboard.autocomplete = "off";
+    host.append(keyboard);
+    let contextMenu = null;
 
     const point = event => { const p = svg.createSVGPoint(); p.x = event.clientX; p.y = event.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
     const stateAt = id => draft.states.find(q => q.id === id);
     const edgeAt = id => draft.transitions.find(t => t.id === id);
     const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
     const svgElement = (name, attributes = {}) => { const element = document.createElementNS(NS, name); for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value); return element; };
+
+    function selectedText() {
+        const target = selection?.type === "state" ? stateAt(selection.id) : selection?.type === "transition" ? edgeAt(selection.id) : null;
+        return selection?.type === "state" ? target?.name ?? "" : target?.text ?? target?.eventNames.join(", ") ?? "";
+    }
+
+    function summonKeyboard() {
+        if (layoutOnly || !selection) return;
+        keyboard.value = selectedText();
+        keyboard.focus({ preventScroll: true });
+        keyboard.setSelectionRange(0, keyboard.value.length);
+    }
+
+    function applyKeyboardValue() {
+        if (!selection) return;
+        const target = selection.type === "state" ? stateAt(selection.id) : edgeAt(selection.id);
+        if (!target) return;
+        if (selection.type === "state") {
+            const value = keyboard.value.replace(/\s/g, "");
+            if (!draft.states.some(q => q.id !== target.id && q.name === value)) target.name = value;
+        } else { target.text = keyboard.value; commitTransition(target); }
+        render();
+    }
+    keyboard.addEventListener("input", applyKeyboardValue);
+
+    function closeContextMenu() { contextMenu?.remove(); contextMenu = null; }
+    function showContextMenu(clientX, clientY) {
+        if (!selection) return;
+        closeContextMenu();
+        const menu = document.createElement("div"); menu.className = "visual-editor-context-menu"; menu.setAttribute("role", "menu");
+        const action = (label, callback, danger = false) => { const button = document.createElement("button"); button.type = "button"; button.textContent = label; if (danger) button.className = "is-danger"; button.onclick = () => { callback(); closeContextMenu(); }; menu.append(button); };
+        if (!layoutOnly) {
+            action("Edit text", () => { closeContextMenu(); summonKeyboard(); });
+            if (selection.type === "state") { action("Set as initial", () => { draft.initialStateId = selection.id; render(); }); action("Toggle marked", () => { const q = stateAt(selection.id); q.marked = !q.marked; render(); }); }
+            else action("Toggle event controllability", () => { toggleControllability(edgeAt(selection.id), selection.eventName); render(); });
+            action(selection.type === "state" ? "Remove state" : "Remove transition", deleteSelection, true);
+        }
+        if (!menu.childElementCount) return;
+        host.append(menu); contextMenu = menu;
+        const bounds = host.getBoundingClientRect(), width = menu.offsetWidth, height = menu.offsetHeight;
+        menu.style.left = `${Math.max(4, Math.min(clientX - bounds.left, bounds.width - width - 4))}px`;
+        menu.style.top = `${Math.max(4, Math.min(clientY - bounds.top, bounds.height - height - 4))}px`;
+        menu.querySelector("button")?.focus();
+    }
 
     function addStateAt(p, initial) {
         const state = { id: uid("state"), name: "", marked: false, x: p.x, y: p.y };
@@ -80,7 +128,10 @@ export function createAutomatonEditor(host, layoutOnly = false) {
             const label = { x: (start.x + end.x) / 2 - dy / length * 16, y: (start.y + end.y) / 2 + dx / length * 16 };
             return { path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, label, handle: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
         }
-        return { path: `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`, label: control, handle: control };
+        const label = { x: (start.x + 2 * control.x + end.x) / 4, y: (start.y + 2 * control.y + end.y) / 4 };
+        const tangent = { x: end.x - start.x, y: end.y - start.y }, tangentLength = Math.hypot(tangent.x, tangent.y) || 1;
+        label.x -= tangent.y / tangentLength * 16; label.y += tangent.x / tangentLength * 16;
+        return { path: `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`, label, handle: control };
     }
 
     function addTransitionLabel(group, edge, geometry, selected) {
@@ -127,7 +178,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }
 
     svg.addEventListener("pointerdown", event => {
-        host.focus();
+        closeContextMenu(); host.focus();
         const p = point(event), control = event.target.closest?.("[data-control-id]"), stateElement = event.target.closest?.("[data-state-id]"), edgeElement = event.target.closest?.("[data-transition-id]"), eventElement = event.target.closest?.("[data-event-name]");
         const clickedObject = edgeElement ? `transition:${edgeElement.dataset.transitionId}` : stateElement ? `state:${stateElement.dataset.stateId}` : null;
         const isSecondClick = clickedObject && lastClick?.object === clickedObject && performance.now() - lastClick.time < 450;
@@ -145,8 +196,17 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (activeTool === "transition" && stateElement) { if (!transitionSourceId) { transitionSourceId = stateElement.dataset.stateId; selection = { type: "state", id: transitionSourceId }; render(); } else { createTransition(transitionSourceId, stateElement.dataset.stateId); transitionSourceId = null; activeTool = "select"; } return; }
         if (selection && (!edgeElement || selection.id !== edgeElement.dataset.transitionId)) commitSelection();
         if (control) { selection = { type: "transition", id: control.dataset.controlId }; drag = { type: "control", id: control.dataset.controlId }; }
-        else if (stateElement) { const createEdge = !layoutOnly && event.shiftKey; selection = { type: "state", id: stateElement.dataset.stateId }; drag = { type: createEdge ? "transition" : "state", id: stateElement.dataset.stateId, start: p }; }
-        else if (edgeElement) { const edge = edgeAt(edgeElement.dataset.transitionId); edge.text ??= edge.eventNames.join(", "); selection = { type: "transition", id: edge.id, eventName: eventElement?.dataset.eventName }; }
+        else if (stateElement) {
+            const createEdge = !layoutOnly && event.shiftKey;
+            selection = { type: "state", id: stateElement.dataset.stateId };
+            drag = { type: createEdge ? "transition" : "state", id: stateElement.dataset.stateId, start: p, pointerType: event.pointerType, held: false };
+            if (!layoutOnly && event.pointerType === "touch" && !createEdge) touchHoldTimer = setTimeout(() => { if (drag?.id === stateElement.dataset.stateId) drag.held = true; }, 350);
+        }
+        else if (edgeElement) {
+            const edge = edgeAt(edgeElement.dataset.transitionId); edge.text ??= edge.eventNames.join(", "); selection = { type: "transition", id: edge.id, eventName: eventElement?.dataset.eventName };
+            drag = layoutOnly ? { type: "control", id: edge.id } : event.pointerType === "touch" ? { type: "touch-menu", id: edge.id, held: false } : null;
+            if (drag?.type === "touch-menu") touchHoldTimer = setTimeout(() => { if (drag?.id === edge.id) drag.held = true; }, 350);
+        }
         else { selection = null; drag = { type: "canvas", start: p, originX: viewport.panX, originY: viewport.panY }; }
         svg.setPointerCapture(event.pointerId);
         if (!layoutOnly && event.detail === 1 && (edgeElement || stateElement)) {
@@ -158,7 +218,11 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     svg.addEventListener("pointermove", event => {
         if (!drag) return;
         const p = point(event);
-        if (drag.type === "state" && distance(p, drag.start) > 5) { const q = stateAt(drag.id); q.x = p.x; q.y = p.y; }
+        if (drag.type === "touch-menu") return;
+        if (drag.type === "state" && distance(p, drag.start) > 5) {
+            if (drag.pointerType === "touch" && drag.held && !layoutOnly) { drag.type = "transition"; preview = { from: stateAt(drag.id), to: p }; }
+            else if (drag.pointerType !== "touch" || layoutOnly || !drag.held) { clearTimeout(touchHoldTimer); const q = stateAt(drag.id); q.x = p.x; q.y = p.y; }
+        }
         if (drag.type === "transition" && distance(p, drag.start) > 5) preview = { from: stateAt(drag.id), to: p };
         if (drag.type === "canvas" && layoutOnly) { viewport.panX = drag.originX - (p.x - drag.start.x); viewport.panY = drag.originY - (p.y - drag.start.y); updateViewBox(); }
         if (drag.type === "control") { const edge = edgeAt(drag.id); edge.controlX = p.x; edge.controlY = p.y; }
@@ -166,12 +230,25 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     });
 
     svg.addEventListener("pointerup", event => {
-        if (!drag) return;
+        if (!drag) { if (selection) summonKeyboard(); return; }
+        clearTimeout(touchHoldTimer); touchHoldTimer = null;
         if (drag.type === "transition") {
             const releasePoint = point(event), target = draft.states.find(state => distance(state, releasePoint) <= 34);
             if (target) createTransition(drag.id, target.id);
         }
-        drag = null; preview = null; host.focus(); render();
+        const wasTouchHold = event.pointerType === "touch" && (drag.type === "state" || drag.type === "touch-menu") && drag.held;
+        drag = null; preview = null; render();
+        if (wasTouchHold) showContextMenu(event.clientX, event.clientY); else if (selection) summonKeyboard(); else host.focus();
+    });
+
+    svg.addEventListener("pointercancel", () => { clearTimeout(touchHoldTimer); touchHoldTimer = null; drag = null; preview = null; render(); });
+
+    svg.addEventListener("contextmenu", event => {
+        const stateElement = event.target.closest?.("[data-state-id]"), edgeElement = event.target.closest?.("[data-transition-id]");
+        if (!stateElement && !edgeElement) return;
+        event.preventDefault();
+        selection = stateElement ? { type: "state", id: stateElement.dataset.stateId } : { type: "transition", id: edgeElement.dataset.transitionId, eventName: event.target.closest?.("[data-event-name]")?.dataset.eventName };
+        render(); showContextMenu(event.clientX, event.clientY);
     });
 
     svg.addEventListener("dblclick", event => {
@@ -181,7 +258,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (edgeElement) {
             toggleControllability(edgeAt(edgeElement.dataset.transitionId), event.target.closest?.("[data-event-name]")?.dataset.eventName); render();
         } else if (stateElement) { const q = stateAt(stateElement.dataset.stateId); q.marked = !q.marked; render(); }
-        else addStateAt(p, event.altKey || event.metaKey);
+        else addStateAt(p, false);
     });
 
     function createTransition(sourceId, targetId) {
@@ -193,6 +270,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }
 
     host.addEventListener("keydown", event => {
+        if (event.target === keyboard || event.target?.closest?.(".visual-editor-context-menu")) return;
         if (event.key === "Escape") { commitSelection(); drag = null; preview = null; selection = null; render(); return; }
         if (!layoutOnly && event.key === "Delete" && selection) {
             event.preventDefault();
@@ -240,6 +318,6 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         },
         getDraft() { commitSelection(); syncEvents(); return structuredClone(draft); },
         getLayout() { return { ...viewport, states: draft.states.map(q => ({ state: q.name, x: q.x, y: q.y })), transitions: draft.transitions.map(t => ({ source: t.sourceId, target: t.targetId, events: t.eventNames, controlX: t.controlX, controlY: t.controlY })) }; },
-        dispose() { host.replaceChildren(); }
+        dispose() { clearTimeout(touchHoldTimer); clearTimeout(clickRenderTimer); host.replaceChildren(); }
     };
 }
