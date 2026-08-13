@@ -15,8 +15,8 @@
     }
 
     <p class="help visual-editor-help">
-        @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
-        else { <text>Double-click empty space to add a state, or Alt/Cmd + double-click to add the initial state. Select a state and type its name. Hold Shift and drag between states to create a transition; type comma-separated events while it is selected. Double-click an event to toggle only that event between controllable (blue) and uncontrollable (red). Delete removes the selection. On touch screens, use the tools below and tap the diagram.</text> }
+        @if (LayoutOnly) { <text>Drag states and transitions to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. Labels follow their transitions automatically. The automaton structure is read-only.</text> }
+        else { <text>Double-click (or double-tap) empty space to add a state. Use “Add initial” or “Set initial” to define the initial state. Select a state or transition and type to edit it. Hold Shift and drag between states with a mouse; on touch, hold a state and drag to another. Right-click or touch and hold an item for more options.</text> }
     </p>
 
     @if (!LayoutOnly)
