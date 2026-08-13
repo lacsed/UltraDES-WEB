@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-vwdplIDYiy5lPL5j5pcUR+NKd2WTXc+UwQH/8SgLXG8=",
+    "hash": "sha256-53eGUQexVXWHvup+VCSGwoMs7Ih+ol/tHB5xUp7Onq4=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-JTswf4CBcNmmrTGm6DppxYNII8GVEmbA3iXD3bU1fcA="
     },
@@ -52,7 +52,7 @@
       "System.Drawing.wasm": "sha256-2ZQfw0ArB8rIxhPvv/8cuEsZoIkhYIPpyQl4AjaU5lM=",
       "System.Linq.Expressions.wasm": "sha256-p7VWjTjKtEsJ1WCTiSGajto3XUeJJ+SsrMClwrpje5o=",
       "System.Linq.Parallel.wasm": "sha256-EhHJaAj6osf6bkKOYjJDBr5RKVovnMgGSOQEYTxUPOs=",
-      "System.Linq.wasm": "sha256-aUzz7Kvk3eWag8wvJzongvg1pOrX6y162PHlyTKPIjU=",
+      "System.Linq.wasm": "sha256-ZEY8elAKfA137vLqxx4MEd1pLcmYxD0MLRFrzwYGraI=",
       "System.Memory.wasm": "sha256-cY5F0AsvlS+ZtwOpJRWFMWoPvDZk4MYHrfq+wjqPlbA=",
       "System.Net.Http.wasm": "sha256-Qn6V1jw7pKfpavd4zVkThtpr6xkWykUXcPngsc/VoCc=",
       "System.Net.Primitives.wasm": "sha256-cRm+6PGM324Md90SMykqGAKeiFuFebYkhWUbvf/hVa0=",
@@ -83,7 +83,7 @@
       "System.wasm": "sha256-j0ZGZpl3U3v6Y5aQxnvY7OqOdRv9E3uPI4tGitwhjXI=",
       "netstandard.wasm": "sha256-ZT+Hm/GuO7UzHrIMKC5suYek2Lw8MGAMi0/5K8Q/AYk=",
       "System.Private.CoreLib.wasm": "sha256-+MhjW9bVY2bEFMmzu56lr0qzeSKQ2+n2k6TDEyI4vYE=",
-      "UltraDESWeb.wasm": "sha256-ymP4cQkwlRm1CtzLk/ZP4rMAKsSDE04OPEw2qkzpt38="
+      "UltraDESWeb.wasm": "sha256-GQorBHZLlsI7RrT6T4gJXfMo53Mgd02GqsLJXrIVzig="
     }
   },
   "cacheBootResources": true,
