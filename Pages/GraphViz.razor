@@ -1,6 +1,22 @@
-﻿@inject IJSRuntime JSRuntime;
+﻿@using global::UltraDES
+@inject IJSRuntime JSRuntime;
 
-@if (!computing)
+@if (awaitingConfirmation)
+{
+    <ConfirmationModal Title="Render large automaton?" ConfirmText="Render anyway" CancelText="Cancel"
+                       Disabled="@computing" OnConfirm="ConfirmRendering" OnCancel="CancelRendering">
+        <p>This automaton has exactly <strong>@effectiveStateCount states</strong>. Rendering may take a long time. Do you want to continue?</p>
+    </ConfirmationModal>
+}
+else if (computing)
+{
+    <div class="pageloader is-active" style="background: #287ef2"><span class="title">Drawing</span></div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="notification is-danger" role="alert">@errorMessage</div>
+}
+else
 {
 <div style="text-align: center">
     <div class="buttons">
@@ -12,32 +28,73 @@
     </div>
 </div>
 }
-else
-{
-    <div class="pageloader is-active" style="background: #287ef2"><span class="title">Drawing</span></div>
-}
 @code {
 
     [Parameter]
-    public string DotCode { get; set; }
+    public DeterministicFiniteAutomaton Automaton { get; set; }
 
     [Parameter]
-    public Action OnCancel { get; set; }
+    public int StateCount { get; set; }
+
+    [Parameter]
+    public bool LargeAutomatonConfirmed { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnRenderingChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
 
     private bool computing = false;
-
     private string svg = "";
+    private string errorMessage = "";
+    private bool awaitingConfirmation;
+    private int effectiveStateCount;
 
     protected override async Task OnInitializedAsync()
     {
-        computing = true;
-        await Task.Delay(1);
-        svg = await JSRuntime.InvokeAsync<string>("GraphViz", DotCode);
-        computing = false;
-        await Task.Delay(1);
+        effectiveStateCount = Automaton?.States.Count() ?? StateCount;
+        awaitingConfirmation = effectiveStateCount > 100 && !LargeAutomatonConfirmed;
+        if (!awaitingConfirmation)
+            await RenderAutomaton();
     }
 
-    public void downloadSVG() => JSRuntime.InvokeVoidAsync("downloadSVG", "G.svg", DotCode);
-    public void downloadPNG() => JSRuntime.InvokeVoidAsync("downloadPNG", "G.png", DotCode);
+    private async Task ConfirmRendering()
+    {
+        if (computing) return;
+        awaitingConfirmation = false;
+        await RenderAutomaton();
+    }
+
+    private async Task CancelRendering()
+    {
+        awaitingConfirmation = false;
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task RenderAutomaton()
+    {
+        if (computing || Automaton is null) return;
+        computing = true;
+        errorMessage = "";
+        await OnRenderingChanged.InvokeAsync(true);
+        try
+        {
+            await Task.Delay(1);
+            svg = await JSRuntime.InvokeAsync<string>("GraphViz", Automaton.ToDotCode);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Graphviz could not render this automaton: {ex.Message}";
+        }
+        finally
+        {
+            computing = false;
+            await OnRenderingChanged.InvokeAsync(false);
+        }
+    }
+
+    public void downloadSVG() => JSRuntime.InvokeVoidAsync("downloadSVG", "G.svg", Automaton.ToDotCode);
+    public void downloadPNG() => JSRuntime.InvokeVoidAsync("downloadPNG", "G.png", Automaton.ToDotCode);
 
 }
