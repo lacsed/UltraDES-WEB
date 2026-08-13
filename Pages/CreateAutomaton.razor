@@ -1,5 +1,7 @@
 ﻿@using global::UltraDES
 
+@inject AutomatonDraftValidator Validator
+
 <div>
     <div class="field is-horizontal">
         <label class="field-label" for="trans">Transitions</label>
@@ -59,6 +61,10 @@
             <input type="text" class="input" id="name" @bind="name">
         </div>
     </div>
+    @if (errors.Count > 0)
+    {
+        <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
+    }
     <div class="buttons">
         <button class="button is-success" @onclick="Create">Create Automaton</button>
         <button class="button is-danger" @onclick="OnCancel">Cancel</button>
@@ -66,7 +72,7 @@
 </div>
 
 @code {
-    [Parameter] public Action<DeterministicFiniteAutomaton> OnSuccess { get; set; }
+    [Parameter] public Func<DeterministicFiniteAutomaton, bool> OnSuccess { get; set; }
     [Parameter] public Action OnCancel { get; set; }
     [Parameter]public Dictionary<string, AbstractState> States { get; set; }
     [Parameter]public Dictionary<string, AbstractEvent> Events { get; set; }
@@ -75,6 +81,8 @@
     private string initial = "";
     private int transitionsNum = 1;
     private readonly string[,] transitions = new string[100, 3];
+    private readonly List<string> errors = new();
+    [Parameter] public IEnumerable<string> ExistingAutomatonNames { get; set; } = Array.Empty<string>();
 
     protected override void OnInitialized()
     {
@@ -85,17 +93,16 @@
 
     private void Create()
     {
-        var trans = Enumerable.Range(0, transitionsNum)
-            .Select(i => (transitions[i, 0], transitions[i, 1], transitions[i, 2]))
-            .Where(t => States.ContainsKey(t.Item1) && Events.ContainsKey(t.Item2) && States.ContainsKey(t.Item3))
-            .Select(t => new Transition(States[t.Item1], Events[t.Item2], States[t.Item3]))
-            .ToArray();
-
-        var initialState = States[initial];
-
-        var G = new DeterministicFiniteAutomaton(trans, initialState, name);
-        OnSuccess(G);
-        StateHasChanged();
+        errors.Clear();
+        var draft = new AutomatonDraftValidator.Draft(name,
+            States.Select(q => new AutomatonDraftValidator.StateDraft(q.Key, q.Key, q.Value.IsMarked)).ToArray(),
+            Events.Select(e => new AutomatonDraftValidator.EventDraft(e.Key, e.Key, e.Value.IsControllable)).ToArray(),
+            Enumerable.Range(0, transitionsNum).Select(i => new AutomatonDraftValidator.TransitionDraft(
+                transitions[i, 0], transitions[i, 2], string.IsNullOrWhiteSpace(transitions[i, 1]) ? Array.Empty<string>() : new[] { transitions[i, 1] })).ToArray(), initial);
+        var result = Validator.ValidateAndCreate(draft, ExistingAutomatonNames);
+        errors.AddRange(result.Errors);
+        if (result.IsValid && !OnSuccess(result.Automaton!))
+            errors.Add("The automaton conflicts with the current workspace and was not added.");
     }
 
 }

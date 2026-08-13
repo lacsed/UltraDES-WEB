@@ -1,5 +1,6 @@
 ﻿@using global::UltraDES
 @implements IAsyncDisposable
+@inject AutomatonDraftValidator Validator
 @inject IJSRuntime JS
 
 <div class="visual-automaton-editor">
@@ -47,9 +48,9 @@
     </div>
 
     <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
-    @if (!string.IsNullOrEmpty(error))
+    @if (errors.Count > 0)
     {
-        <div class="notification is-danger" role="alert">@error</div>
+        <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
     }
     <div class="buttons mt-4">
         <button class="button is-success" type="button" @onclick="Save">Create Automaton</button>
@@ -58,8 +59,9 @@
 </div>
 
 @code {
-    [Parameter] public Action<DeterministicFiniteAutomaton> OnSuccess { get; set; }
+    [Parameter] public Func<DeterministicFiniteAutomaton, bool> OnSuccess { get; set; }
     [Parameter] public Action OnCancel { get; set; }
+    [Parameter] public IEnumerable<string> ExistingAutomatonNames { get; set; } = Array.Empty<string>();
 
     // These DTOs deliberately keep the mutable visual draft separate from UltraDES.
     public sealed class DraftState { public string Id { get; set; } public string Name { get; set; } public bool Marked { get; set; } public double X { get; set; } public double Y { get; set; } }
@@ -73,7 +75,7 @@
     private string automatonName = "";
     private string eventName = "";
     private string eventControllable = "true";
-    private string error = "";
+    private readonly List<string> errors = new();
     private readonly List<DraftEvent> draftEvents = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -85,11 +87,11 @@
 
     private async Task AddEvent()
     {
-        error = "";
+        errors.Clear();
         var name = eventName.Trim();
-        if (string.IsNullOrWhiteSpace(name)) { error = "Event name cannot be blank."; return; }
-        if (name.Contains(',')) { error = "An event name cannot contain a comma."; return; }
-        if (draftEvents.Any(e => string.Equals(e.Name, name, StringComparison.Ordinal))) { error = "Event names must be unique."; return; }
+        if (string.IsNullOrWhiteSpace(name)) { errors.Add("Event name cannot be blank."); return; }
+        if (name.Contains(',')) { errors.Add("An event name cannot contain a comma."); return; }
+        if (draftEvents.Any(e => string.Equals(e.Name, name, StringComparison.Ordinal))) { errors.Add("Event names must be unique."); return; }
         var item = new DraftEvent { Id = Guid.NewGuid().ToString("N"), Name = name, Controllable = eventControllable == "true" };
         draftEvents.Add(item);
         eventName = "";
@@ -106,16 +108,17 @@
 
     private async Task Save()
     {
-        error = "";
-        if (string.IsNullOrWhiteSpace(automatonName)) { error = "Automaton name cannot be blank."; return; }
+        errors.Clear();
         var draft = await editor.InvokeAsync<AutomatonDraft>("getDraft");
-        if (draft.States.Length == 0) { error = "Add at least one state."; return; }
-        if (string.IsNullOrEmpty(draft.InitialStateId)) { error = "Select an initial state."; return; }
-
-        var states = draft.States.ToDictionary(q => q.Id, q => (AbstractState)new State(q.Name, q.Marked ? Marking.Marked : Marking.Unmarked));
-        var events = draft.Events.ToDictionary(e => e.Name, e => (AbstractEvent)new Event(e.Name, e.Controllable ? Controllability.Controllable : Controllability.Uncontrollable));
-        var transitions = draft.Transitions.SelectMany(edge => edge.EventNames.Select(name => new Transition(states[edge.SourceId], events[name], states[edge.TargetId]))).ToArray();
-        OnSuccess(new DeterministicFiniteAutomaton(transitions, states[draft.InitialStateId], automatonName.Trim()));
+        var validationDraft = new AutomatonDraftValidator.Draft(automatonName,
+            draft.States.Select(q => new AutomatonDraftValidator.StateDraft(q.Id, q.Name, q.Marked)).ToArray(),
+            draft.Events.Select(e => new AutomatonDraftValidator.EventDraft(e.Id, e.Name, e.Controllable)).ToArray(),
+            draft.Transitions.Select(t => new AutomatonDraftValidator.TransitionDraft(t.SourceId, t.TargetId,
+                t.EventNames.Select(name => draft.Events.FirstOrDefault(e => e.Name == name)?.Id ?? name).ToArray())).ToArray(), draft.InitialStateId);
+        var result = Validator.ValidateAndCreate(validationDraft, ExistingAutomatonNames);
+        errors.AddRange(result.Errors);
+        if (result.IsValid && !OnSuccess(result.Automaton!))
+            errors.Add("The automaton conflicts with the current workspace and was not added.");
     }
 
     public async ValueTask DisposeAsync()

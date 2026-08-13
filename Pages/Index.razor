@@ -88,6 +88,10 @@
 </nav>
 
 <main class="grid-content">
+    @if (!string.IsNullOrWhiteSpace(workspaceError))
+    {
+        <div class="notification is-danger" role="alert">@workspaceError</div>
+    }
     <div class="section" style="width: 300px; height: 100%; background-color: whitesmoke">
         <p class="menu-label">States (<a class="content-button" @onclick="() => ShowStates = !ShowStates">@((ShowStates) ? "- Hide": "+ Show")</a>)</p>
         <ul class="menu-list">
@@ -222,10 +226,10 @@
                 <Modal Title="Create an Event" OnClose="@Clear"><CreateEvent OnSuccess="e => AddEvent(e)" OnCancel="@Clear"></CreateEvent></Modal>
                 break;
             case Page.CreateAutomaton:
-                <Modal Title="Create an Automaton" OnClose="@Clear"><CreateAutomaton OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" Events="events" States="states"></CreateAutomaton></Modal>
+                <Modal Title="Create an Automaton" OnClose="@Clear"><CreateAutomaton OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" Events="events" States="states" ExistingAutomatonNames="automata.Keys"></CreateAutomaton></Modal>
                 break;
             case Page.CreateVisualAutomaton:
-                <Modal Title="Create a Visual Automaton" OnClose="@Clear"><VisualAutomatonEditor OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
+                <Modal Title="Create a Visual Automaton" OnClose="@Clear"><VisualAutomatonEditor OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" ExistingAutomatonNames="automata.Keys" /></Modal>
                 break;
             case Page.ShowAutomaton:
                 <Modal Title="@automaton.Name" OnClose="@Clear">
@@ -294,6 +298,7 @@
     private bool ShowEvents = false;
     private bool ShowAutomata = true;
     private bool workspaceLoaded;
+    private string workspaceError = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -310,8 +315,7 @@
             {
                 try
                 {
-                    foreach (var restored in DeterministicFiniteAutomaton.FromJsonString(json))
-                        automata.TryAdd(restored.Name, restored);
+                    AddAutomaton(DeterministicFiniteAutomaton.FromJsonString(json), false);
                 }
                 catch
                 {
@@ -375,13 +379,34 @@
         StateHasChanged();
     }
 
-    private void AddAutomaton(IEnumerable<DeterministicFiniteAutomaton> aut)
+    private bool AddAutomaton(IEnumerable<DeterministicFiniteAutomaton> aut, bool closeEditor = true)
     {
-        page = Page.Empty;
-        foreach (var G in aut)
-            if (!automata.ContainsKey(G.Name)) automata.Add(G.Name, G);
+        workspaceError = "";
+        var additions = aut.ToArray();
+        var duplicate = additions.Select(g => g.Name).FirstOrDefault(name => string.IsNullOrWhiteSpace(name) || automata.ContainsKey(name));
+        if (duplicate is not null)
+        {
+            workspaceError = string.IsNullOrWhiteSpace(duplicate) ? "Automaton name cannot be blank." : $"An automaton named '{duplicate}' already exists.";
+            return false;
+        }
+        foreach (var G in additions)
+            foreach (var e in G.Events)
+                if (events.TryGetValue(e.ToString(), out var global) && global.IsControllable != e.IsControllable)
+                {
+                    workspaceError = $"Event '{e}' has different controllability in the workspace; the automaton was not added.";
+                    return false;
+                }
+
+        foreach (var G in additions)
+        {
+            foreach (var q in G.States) states.TryAdd(q.ToString(), q);
+            foreach (var e in G.Events) events.TryAdd(e.ToString(), e);
+            automata.Add(G.Name, G);
+        }
+        if (closeEditor) page = Page.Empty;
         PersistWorkspace();
         StateHasChanged();
+        return true;
     }
 
     private async void RemoveAutomaton(string aut)
@@ -459,18 +484,13 @@
 
     private void LoadSmallFactory()
     {
-        states.TryAdd("q0", new State("q0", Marking.Marked));
-        states.TryAdd("q1", new State("q1", Marking.Unmarked));
-
-        events.TryAdd("a1", new Event("a1", Controllability.Controllable));
-        events.TryAdd("a2", new Event("a2", Controllability.Controllable));
-        events.TryAdd("b1", new Event("b1", Controllability.Uncontrollable));
-        events.TryAdd("b2", new Event("b2", Controllability.Uncontrollable));
-
-        automata.TryAdd("M1", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["a1"], states["q1"]), (states["q1"], events["b1"], states["q0"]), }, states["q0"], "M1"));
-        automata.TryAdd("M2", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["a2"], states["q1"]), (states["q1"], events["b2"], states["q0"]), }, states["q0"], "M2"));
-        automata.TryAdd("E", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["b1"], states["q1"]), (states["q1"], events["a2"], states["q0"]), }, states["q0"], "E"));
-        PersistWorkspace();
+        var q0 = new State("q0", Marking.Marked); var q1 = new State("q1", Marking.Unmarked);
+        var a1 = new Event("a1", Controllability.Controllable); var a2 = new Event("a2", Controllability.Controllable);
+        var b1 = new Event("b1", Controllability.Uncontrollable); var b2 = new Event("b2", Controllability.Uncontrollable);
+        AddAutomaton(new[] {
+            new DeterministicFiniteAutomaton(new Transition[] { (q0, a1, q1), (q1, b1, q0) }, q0, "M1"),
+            new DeterministicFiniteAutomaton(new Transition[] { (q0, a2, q1), (q1, b2, q0) }, q0, "M2"),
+            new DeterministicFiniteAutomaton(new Transition[] { (q0, b1, q1), (q1, a2, q0) }, q0, "E") });
     }
 
     private void LoadFlexibleManufacturingSystem()
@@ -529,9 +549,7 @@
 
         var aut = new[] { c1, c2, lathe, mill, robot, am, c3, pd, e1, e2, e3, e4, e5, e6, e7, e8 };
 
-        foreach (var g in aut) if (!automata.TryAdd(g.Name, g)) automata[g.Name] = g;
-        foreach (var ev in e.Values.Where(ev => !events.TryAdd(ev.ToString(), ev))) events[ev.ToString()] = ev;
-        PersistWorkspace();
+        AddAutomaton(aut);
     }
 
 
