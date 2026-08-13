@@ -5,13 +5,17 @@
 @inject WorkspaceStorage WorkspaceStorage;
 @inject AutomatonLayoutService AutomatonLayoutService;
 
-<nav class="navbar has-shadow has-background-light grid-header" role="navigation" aria-label="main navigation" style="align-items: stretch; display: flex;">
+<nav class="app-navbar grid-header" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-        <a class="navbar-item" href="https://github.com/lacsed/UltraDES">
+        <a class="navbar-item app-brand" href="https://github.com/lacsed/UltraDES">
             <img src="/UltraDES/img/logo.png" alt="UltraDES" width="112" height="50">
+            <span class="brand-copy"><strong>UltraDES</strong><small>Discrete Event Systems</small></span>
         </a>
+        <button type="button" class="mobile-menu-button" aria-label="Toggle navigation" aria-expanded="@mobileMenuOpen" @onclick="() => mobileMenuOpen = !mobileMenuOpen">
+            <i class="fas @(mobileMenuOpen ? "fa-times" : "fa-bars")"></i>
+        </button>
     </div>
-    <div class="navbar-end" style="vertical-align: middle;">
+    <div class="navbar-end app-navigation">
         <div class="dropdown is-hoverable is-hidden-mobile">
             <button class="button" aria-haspopup="true" aria-controls="create">
                 <span>Create <i class="fas fa-angle-down"></i></span>
@@ -55,7 +59,7 @@
                 </div>
             </div>
         </div>
-        <div class="dropdown is-hoverable is-hidden-tablet">
+        <div class="dropdown mobile-navigation @(mobileMenuOpen ? "is-active" : "")">
             <button class="button" aria-haspopup="true" aria-controls="mobile">
                 <span>Options <i class="fas fa-angle-down"></i></span>
             </button>
@@ -89,7 +93,7 @@
     </div>
 </nav>
 
-<main class="grid-content">
+<main class="grid-content app-main">
     @if (!string.IsNullOrWhiteSpace(workspaceError))
     {
         <div class="notification is-danger" role="alert">@workspaceError</div>
@@ -100,8 +104,12 @@
             <button class="button is-small ml-3" type="button" @onclick="CancelVisualLayout">Cancel</button>
         </div>
     }
-    <div class="section" style="width: 300px; height: 100%; background-color: whitesmoke">
-        <p class="menu-label">States (<a class="content-button" @onclick="() => ShowStates = !ShowStates">@((ShowStates) ? "- Hide": "+ Show")</a>)</p>
+    <aside class="workspace-sidebar">
+        <div class="workspace-heading">
+            <div><span class="eyebrow">Current project</span><h1>Workspace</h1></div>
+            <span class="workspace-total">@(states.Count + events.Count + automata.Count)</span>
+        </div>
+        <p class="menu-label">States <span class="item-count">@states.Count</span><a class="content-button" @onclick="() => ShowStates = !ShowStates">@((ShowStates) ? "Hide": "Show")</a></p>
         <ul class="menu-list">
             @if (ShowStates)
             {
@@ -133,7 +141,7 @@
             }
         </ul>
 
-        <p class="menu-label">Events (<a class="content-button" @onclick="() => ShowEvents = !ShowEvents">@((ShowEvents) ? "- Hide": "+ Show")</a>)</p>
+        <p class="menu-label">Events <span class="item-count">@events.Count</span><a class="content-button" @onclick="() => ShowEvents = !ShowEvents">@((ShowEvents) ? "Hide": "Show")</a></p>
         <ul class="menu-list">
 
             @if (ShowEvents)
@@ -167,7 +175,7 @@
         </ul>
 
 
-        <p class="menu-label">Automaton (<a class="content-button" @onclick="() => ShowAutomata = !ShowAutomata">@((ShowAutomata) ? "- Hide": "+ Show")</a>)</p>
+        <p class="menu-label">Automata <span class="item-count">@automata.Count</span><a class="content-button" @onclick="() => ShowAutomata = !ShowAutomata">@((ShowAutomata) ? "Hide": "Show")</a></p>
         <ul class="menu-list">
             @if (ShowAutomata)
             {
@@ -229,9 +237,9 @@
                 }
             }
         </ul>
-    </div>
+    </aside>
 
-    <div class="container">
+    <section class="workspace-content">
         @switch (page)
         {
             case Page.CreateState:
@@ -279,9 +287,30 @@
                 break;
             case Page.Empty:
             default:
+                <div class="welcome-panel">
+                    <div class="welcome-copy">
+                        <span class="eyebrow">Model, analyze and control</span>
+                        <h2>Build discrete event systems with clarity.</h2>
+                        <p>Create your workspace visually or start with individual states and events. Your work is saved locally as you go.</p>
+                        <div class="welcome-actions">
+                            <button class="button is-primary" @onclick="ev => page = Page.CreateVisualAutomaton"><i class="fas fa-project-diagram"></i><span>New visual automaton</span></button>
+                            <button class="button is-light" @onclick="ev => page = Page.CreateAutomaton"><i class="fas fa-plus"></i><span>Create manually</span></button>
+                        </div>
+                    </div>
+                    <div class="welcome-graphic" aria-hidden="true">
+                        <span class="node node-a">q0</span><span class="connector connector-a"></span>
+                        <span class="node node-b">q1</span><span class="connector connector-b"></span>
+                        <span class="node node-c">q2</span>
+                    </div>
+                    <div class="quick-grid">
+                        <button @onclick="ev => page = Page.CreateState"><i class="far fa-circle"></i><span><strong>Create state</strong><small>Add marked or unmarked states</small></span></button>
+                        <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
+                        <button @onclick="LoadSmallFactory"><i class="fas fa-industry"></i><span><strong>Try an example</strong><small>Load the Small Factory</small></span></button>
+                    </div>
+                </div>
                 break;
         }
-    </div>
+    </section>
 </main>
 
 @if (confirmationAutomaton is not null)
@@ -292,12 +321,9 @@
     </ConfirmationModal>
 }
 
-<footer class="footer has-text-centered">
-    <div style="display: inline-block;">
-        <div style="float: left;"><p><strong>UltraDES</strong> by </p></div>
-        <div style="float: left;"><a href="https://lacsed.eng.ufmg.br"><img src="/UltraDES/img/logo_lacsed.png" alt="LACSED" width="90" height="40"></a></div>
-        <div style="float: right;"><p> | <a href="https://www.ufmg.br">UFMG</a>.</p></div>
-    </div>
+<footer class="app-footer">
+    <span><strong>UltraDES</strong> · Open-source tools for discrete event systems</span>
+    <span>Developed by <a href="https://lacsed.eng.ufmg.br">LACSED</a> at <a href="https://www.ufmg.br">UFMG</a></span>
 </footer>
 
 @code
@@ -339,6 +365,7 @@
     private bool confirmationSubmitting;
     private bool renderingAutomaton;
     private bool layoutGenerating;
+    private bool mobileMenuOpen;
     private string layoutProgress = "";
     private CancellationTokenSource layoutCancellation;
 
