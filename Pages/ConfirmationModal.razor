@@ -1,0 +1,28 @@
+<div class="modal is-active" role="dialog" aria-modal="true" aria-labelledby="@titleId" aria-describedby="@descriptionId">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="@titleId">@Title</p>
+        </header>
+        <section class="modal-card-body" id="@descriptionId">
+            @ChildContent
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-warning" disabled="@Disabled" @onclick="OnConfirm">@ConfirmText</button>
+            <button class="button" disabled="@Disabled" @onclick="OnCancel">@CancelText</button>
+        </footer>
+    </div>
+</div>
+
+@code {
+    private readonly string titleId = $"confirmation-title-{Guid.NewGuid():N}";
+    private readonly string descriptionId = $"confirmation-description-{Guid.NewGuid():N}";
+
+    [Parameter] public string Title { get; set; } = "Confirmation";
+    [Parameter] public string ConfirmText { get; set; } = "Confirm";
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

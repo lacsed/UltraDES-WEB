@@ -183,7 +183,7 @@
                                             <div class="level-right"><span><i class="fas fa-list has-text-black"></i></span></div>
                                         </div>
                                     </a>
-                                    <a @onclick="() => ShowAutomaton(G.Value)">
+                                    <a @onclick="() => ShowAutomaton(G.Value)" aria-disabled="@renderingAutomaton">
                                         <div class="level is-mobile">
                                             <div class="level-left"><span>Show</span></div>
                                             <div class="level-right"><span><i class="fas fa-project-diagram has-text-info"></i></span></div>
@@ -232,8 +232,9 @@
                 <Modal Title="Create a Visual Automaton" OnClose="@Clear"><VisualAutomatonEditor OnSuccess="G => AddAutomaton(new[]{G})" OnCancel="@Clear" ExistingAutomatonNames="automata.Keys" /></Modal>
                 break;
             case Page.ShowAutomaton:
-                <Modal Title="@automaton.Name" OnClose="@Clear">
-                    <GraphViz DotCode="@automaton.ToDotCode" OnCancel="@Clear"></GraphViz>
+                <Modal Title="@automaton.Name" OnClose="@CloseAutomaton">
+                    <GraphViz Automaton="@automaton" StateCount="@automatonStateCount" LargeAutomatonConfirmed="@largeAutomatonConfirmed"
+                              OnCancel="@CloseAutomaton" OnRenderingChanged="SetRenderingState"></GraphViz>
                 </Modal>
                 break;
             case Page.VerifyOpacityAutomaton:
@@ -262,6 +263,14 @@
         }
     </div>
 </main>
+
+@if (confirmationAutomaton is not null)
+{
+    <ConfirmationModal Title="Render large automaton?" ConfirmText="Render anyway" CancelText="Cancel"
+                       Disabled="@confirmationSubmitting" OnConfirm="ConfirmLargeAutomaton" OnCancel="CancelLargeAutomaton">
+        <p>This automaton has exactly <strong>@confirmationStateCount states</strong>. Rendering may take a long time. Do you want to continue?</p>
+    </ConfirmationModal>
+}
 
 <footer class="footer has-text-centered">
     <div style="display: inline-block;">
@@ -299,6 +308,12 @@
     private bool ShowAutomata = true;
     private bool workspaceLoaded;
     private string workspaceError = "";
+    private DeterministicFiniteAutomaton confirmationAutomaton;
+    private int confirmationStateCount;
+    private int automatonStateCount;
+    private bool largeAutomatonConfirmed;
+    private bool confirmationSubmitting;
+    private bool renderingAutomaton;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -419,11 +434,51 @@
 
     private void ShowAutomaton(DeterministicFiniteAutomaton G)
     {
-        page = Page.Empty;
-        StateHasChanged();
+        if (renderingAutomaton || confirmationAutomaton is not null) return;
+
+        var stateCount = G.States.Count();
+        if (stateCount > 100)
+        {
+            confirmationAutomaton = G;
+            confirmationStateCount = stateCount;
+            return;
+        }
+
+        OpenAutomaton(G, stateCount, false);
+    }
+
+    private void ConfirmLargeAutomaton()
+    {
+        if (confirmationSubmitting || confirmationAutomaton is null) return;
+
+        confirmationSubmitting = true;
+        var selectedAutomaton = confirmationAutomaton;
+        var selectedStateCount = confirmationStateCount;
+        confirmationAutomaton = null;
+        OpenAutomaton(selectedAutomaton, selectedStateCount, true);
+        confirmationSubmitting = false;
+    }
+
+    private void CancelLargeAutomaton()
+    {
+        if (confirmationSubmitting) return;
+        confirmationAutomaton = null;
+        confirmationStateCount = 0;
+    }
+
+    private void OpenAutomaton(DeterministicFiniteAutomaton selectedAutomaton, int stateCount, bool confirmed)
+    {
+        automaton = selectedAutomaton;
+        automatonStateCount = stateCount;
+        largeAutomatonConfirmed = confirmed;
         page = Page.ShowAutomaton;
-        automaton = G;
-        StateHasChanged();
+    }
+
+    private void SetRenderingState(bool isRendering) => renderingAutomaton = isRendering;
+
+    private void CloseAutomaton()
+    {
+        if (!renderingAutomaton) Clear();
     }
 
     private void VerifyOpacityAutomaton(DeterministicFiniteAutomaton G)
