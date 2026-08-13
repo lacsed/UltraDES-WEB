@@ -66,7 +66,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     });
     svg.addEventListener("pointermove", e => { if (!drag) return; const p = point(e);
         if (drag.type === "state") { const q = stateAt(drag.id); if (Math.hypot(p.x-drag.start.x,p.y-drag.start.y)>5) { drag.moved=true; q.x=p.x; q.y=p.y; } }
-        if (drag.type === "transition") { preview={from:stateAt(drag.id),to:p}; }
+        if (drag.type === "transition" && Math.hypot(p.x-drag.start.x,p.y-drag.start.y)>5) { drag.moved=true; preview={from:stateAt(drag.id),to:p}; }
         if (drag.type === "canvas" && layoutOnly) { drag.moved = true; viewport.panX = drag.originX - (p.x-drag.start.x); viewport.panY = drag.originY - (p.y-drag.start.y); updateViewBox(); }
         if (drag.type === "control") { const t=draft.transitions.find(x=>x.id===drag.id); t.controlX=p.x; t.controlY=p.y; }
         render();
@@ -105,10 +105,9 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         loadAutomaton(value, layout) { Object.assign(draft, structuredClone(value));
             const savedStates = new Map((layout?.states || []).map(q => [q.state, q]));
             draft.states.forEach((q,i) => { const saved=savedStates.get(q.name); q.x=saved?.x ?? 100+(i%6)*130; q.y=saved?.y ?? 100+Math.floor(i/6)*120; });
-            draft.transitions.forEach(t => { const events=[...t.eventNames].sort().join("\u001f"); const saved=(layout?.transitions||[]).find(x=>x.source===t.sourceId&&x.target===t.targetId&&[...x.events].sort().join("\u001f")===events); const a=stateAt(t.sourceId),b=stateAt(t.targetId); t.controlX=saved?.controlX ?? (a.x+b.x)/2; t.controlY=saved?.controlY ?? (t.sourceId===t.targetId?a.y-90:(a.y+b.y)/2-45); });
+            draft.transitions.forEach(t => { t.text=t.eventNames.join(","); const events=[...t.eventNames].sort().join("\u001f"); const saved=(layout?.transitions||[]).find(x=>x.source===t.sourceId&&x.target===t.targetId&&[...x.events].sort().join("\u001f")===events); const a=stateAt(t.sourceId),b=stateAt(t.targetId); t.controlX=saved?.controlX ?? (a.x+b.x)/2; t.controlY=saved?.controlY ?? (t.sourceId===t.targetId?a.y-90:(a.y+b.y)/2-45); });
             if(layout) viewport={canvasWidth:layout.canvasWidth||900,canvasHeight:layout.canvasHeight||520,zoom:layout.zoom||1,panX:layout.panX||0,panY:layout.panY||0}; updateViewBox(); render(); },
-        toggleMarked() { if(!layoutOnly&&selection?.type==="state"){const q=stateAt(selection.id);q.marked=!q.marked;render();} },
-        setInitial(){if(!layoutOnly&&selection?.type==="state"){draft.initialStateId=selection.id;render();}}, getDraft(){return structuredClone(draft);},
+        getDraft(){syncEvents();return structuredClone(draft);},
         getLayout(){ return {...viewport,states:draft.states.map(q=>({state:q.name,x:q.x,y:q.y})),transitions:draft.transitions.map(t=>({source:t.sourceId,target:t.targetId,events:t.eventNames,controlX:t.controlX,controlY:t.controlY}))}; },
         dispose(){host.replaceChildren();}
     };
