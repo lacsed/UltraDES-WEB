@@ -35,8 +35,13 @@
         </div>
     </app>
 
+    <div id="pwa-update" class="pwa-update" role="status" aria-live="polite" hidden>
+        <span>A new version of UltraDES is available.</span>
+        <button type="button" id="pwa-update-button">Update now</button>
+    </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script src="js/pwa.js"></script>
 </body>
 
 </html>
