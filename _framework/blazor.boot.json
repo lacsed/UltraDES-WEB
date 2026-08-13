@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-53eGUQexVXWHvup+VCSGwoMs7Ih+ol/tHB5xUp7Onq4=",
+    "hash": "sha256-uK2pYannQk4tdYj8anqFx9Y7ymiqgdmU9D30u3zId0U=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-JTswf4CBcNmmrTGm6DppxYNII8GVEmbA3iXD3bU1fcA="
     },
@@ -18,7 +18,7 @@
     },
     "coreAssembly": {},
     "assembly": {
-      "Microsoft.AspNetCore.Components.wasm": "sha256-ECxcqJDk3lvc9dxmueo0haIZSjLVzBPuLKgnRYakS4I=",
+      "Microsoft.AspNetCore.Components.wasm": "sha256-3lmr3UfOvjP//8sAxwbKICnCMnFzGnM6emcmC2CMtB4=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-oUpP/c+gPK8XgFjFEC6kT63gIyCbK4xnW2tHgFcP7E8=",
       "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-RUR57EDCq+i0veTAcwvYktAQ472ZYmpPMBb2CdIB8xs=",
       "Microsoft.Bcl.HashCode.wasm": "sha256-3OMNy/2VRU1BJsB1XSppo6yKKvhDQv3fcHDVi5jGv3k=",
@@ -68,7 +68,7 @@
       "System.Runtime.Numerics.wasm": "sha256-/D79d9Ck/5FlvtoFJJrEy+PfAciEgcg76xSIPYJStLI=",
       "System.Runtime.Serialization.Formatters.wasm": "sha256-v1R1OzesnNJ83myWNY9i6JgyAMLrh32b5V5jTia/PcA=",
       "System.Runtime.Serialization.Primitives.wasm": "sha256-MDGNiDXnkkSl1Fi+vNP8TCfICkFu70rSfj/CgQF63eQ=",
-      "System.Runtime.wasm": "sha256-anYfH3INQ3hlcDvbs3TEcGNBw39dMEcEHJk5H+uEnzA=",
+      "System.Runtime.wasm": "sha256-t5woFzz8HiCcQXrgOce3EDzr53vAd6W9gG4PZF//rr4=",
       "System.Security.Cryptography.wasm": "sha256-Lo6kQAHca2eckbKFhf22JZmCyED3si/vQeTiBbVw7x4=",
       "System.Text.Encoding.Extensions.wasm": "sha256-t57wmYyeTidSbi/IBEzi/QEvTN4Y3iccdXENdOBBZ9s=",
       "System.Text.Encodings.Web.wasm": "sha256-UZy+kbe6BEXdxJ+P5xmYm6qzbb1g/bVmULSmF8IyAmQ=",
@@ -83,7 +83,7 @@
       "System.wasm": "sha256-j0ZGZpl3U3v6Y5aQxnvY7OqOdRv9E3uPI4tGitwhjXI=",
       "netstandard.wasm": "sha256-ZT+Hm/GuO7UzHrIMKC5suYek2Lw8MGAMi0/5K8Q/AYk=",
       "System.Private.CoreLib.wasm": "sha256-+MhjW9bVY2bEFMmzu56lr0qzeSKQ2+n2k6TDEyI4vYE=",
-      "UltraDESWeb.wasm": "sha256-GQorBHZLlsI7RrT6T4gJXfMo53Mgd02GqsLJXrIVzig="
+      "UltraDESWeb.wasm": "sha256-21Iur5IQlE3qMv1qUz++oCU9M4z5JJWZ1zD/rn86aV4="
     }
   },
   "cacheBootResources": true,
