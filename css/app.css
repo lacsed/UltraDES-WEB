@@ -75,8 +75,8 @@ footer {
 .visual-transition text { pointer-events: none; }
 .transition-label { cursor: text; }
 .transition-label rect { fill: #fafafa; stroke: #3273dc; stroke-width: 2; rx: 4; }
-.visual-transition.is-uncontrollable .transition-label rect { stroke: #e53935; }
-.visual-transition.is-uncontrollable .transition-label text { fill: #c62828; }
+.transition-label.is-uncontrollable rect { stroke: #e53935; }
+.transition-label.is-uncontrollable text { fill: #c62828; }
 .visual-transition.is-selected .transition-label rect { fill: #eef5ff; stroke-dasharray: 4 3; }
 .visual-arrow-head { fill: context-stroke; stroke: none; }
 .visual-transition.is-selected > path { stroke: #1565c0; stroke-width: 3.5; }

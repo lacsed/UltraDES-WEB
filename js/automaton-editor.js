@@ -2,7 +2,7 @@ const NS = "http://www.w3.org/2000/svg";
 
 export function createAutomatonEditor(host, layoutOnly = false) {
     const draft = { states: [], events: [], transitions: [], initialStateId: null };
-    let selection = null, drag = null, preview = null, suppressNextDoubleClick = false, clickRenderTimer = null, lastClick = null;
+    let selection = null, drag = null, preview = null, activeTool = "select", transitionSourceId = null, suppressNextDoubleClick = false, clickRenderTimer = null, lastClick = null;
     let viewport = { canvasWidth: 900, canvasHeight: 520, zoom: 1, panX: 0, panY: 0 };
     const svg = document.createElementNS(NS, "svg");
     const updateViewBox = () => svg.setAttribute("viewBox", `${viewport.panX} ${viewport.panY} ${viewport.canvasWidth / viewport.zoom} ${viewport.canvasHeight / viewport.zoom}`);
@@ -48,10 +48,11 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         }));
     }
 
-    function toggleControllability(edge) {
+    function toggleControllability(edge, eventName = null) {
         commitTransition(edge);
-        const makeControllable = edge.eventNames.some(name => draft.events.find(item => item.name === name)?.controllable === false);
-        for (const name of edge.eventNames) {
+        const names = eventName ? [eventName] : edge.eventNames;
+        const makeControllable = names.some(name => draft.events.find(item => item.name === name)?.controllable === false);
+        for (const name of names) {
             const item = draft.events.find(candidate => candidate.name === name);
             if (item) item.controllable = makeControllable;
         }
@@ -83,16 +84,18 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }
 
     function addTransitionLabel(group, edge, geometry, selected) {
-        const labelGroup = svgElement("g", { class: "transition-label", "data-transition-id": edge.id });
-        const text = svgElement("text", { x: geometry.label.x, y: geometry.label.y + 5, "text-anchor": "middle" });
-        const value = selected ? (edge.text ?? edge.eventNames.join(", ")) : edge.eventNames.join(", ");
-        text.textContent = selected ? `${value}\u00a0|` : value;
-        labelGroup.append(text);
-        group.append(labelGroup);
-        if (!value && !selected) return;
-        const width = Math.max(18, text.getComputedTextLength() + 14);
-        const rect = svgElement("rect", { x: geometry.label.x - width / 2, y: geometry.label.y - 13, width, height: 26 });
-        labelGroup.prepend(rect);
+        if (!edge.eventNames.length) return;
+        const labels = edge.eventNames.map(name => {
+            const label = svgElement("g", { class: `transition-label${draft.events.find(e => e.name === name)?.controllable === false ? " is-uncontrollable" : ""}`, "data-transition-id": edge.id, "data-event-name": name });
+            const text = svgElement("text", { y: geometry.label.y + 5, "text-anchor": "middle" }); text.textContent = name; label.append(text); group.append(label);
+            return { label, text, name, width: Math.max(18, text.getComputedTextLength() + 14) };
+        });
+        const total = labels.reduce((sum, item) => sum + item.width, 0) + (labels.length - 1) * 5;
+        let x = geometry.label.x - total / 2;
+        for (const item of labels) {
+            const center = x + item.width / 2; item.text.setAttribute("x", center);
+            item.label.prepend(svgElement("rect", { x, y: geometry.label.y - 13, width: item.width, height: 26 })); x += item.width + 5;
+        }
     }
 
     function render() {
@@ -103,8 +106,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
 
         for (const edge of draft.transitions) {
             const selected = selection?.type === "transition" && selection.id === edge.id;
-            const uncontrollable = edge.eventNames.some(name => draft.events.find(event => event.name === name)?.controllable === false);
-            const geometry = edgeGeometry(edge), group = svgElement("g", { class: `visual-transition${selected ? " is-selected" : ""}${uncontrollable ? " is-uncontrollable" : ""}` });
+            const geometry = edgeGeometry(edge), group = svgElement("g", { class: `visual-transition${selected ? " is-selected" : ""}` });
             group.append(svgElement("path", { class: "transition-hit-area", d: geometry.path, "data-transition-id": edge.id }));
             group.append(svgElement("path", { d: geometry.path, "marker-end": "url(#visual-arrow)", "data-transition-id": edge.id }));
             svg.append(group);
@@ -126,7 +128,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
 
     svg.addEventListener("pointerdown", event => {
         host.focus();
-        const p = point(event), control = event.target.closest?.("[data-control-id]"), stateElement = event.target.closest?.("[data-state-id]"), edgeElement = event.target.closest?.("[data-transition-id]");
+        const p = point(event), control = event.target.closest?.("[data-control-id]"), stateElement = event.target.closest?.("[data-state-id]"), edgeElement = event.target.closest?.("[data-transition-id]"), eventElement = event.target.closest?.("[data-event-name]");
         const clickedObject = edgeElement ? `transition:${edgeElement.dataset.transitionId}` : stateElement ? `state:${stateElement.dataset.stateId}` : null;
         const isSecondClick = clickedObject && lastClick?.object === clickedObject && performance.now() - lastClick.time < 450;
         lastClick = clickedObject ? { object: clickedObject, time: performance.now() } : null;
@@ -135,14 +137,16 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (!layoutOnly && (event.detail === 2 || isSecondClick) && (edgeElement || stateElement)) {
             lastClick = null;
             clearTimeout(clickRenderTimer); clickRenderTimer = null;
-            if (edgeElement) toggleControllability(edgeAt(edgeElement.dataset.transitionId));
+            if (edgeElement) toggleControllability(edgeAt(edgeElement.dataset.transitionId), eventElement?.dataset.eventName);
             else { const state = stateAt(stateElement.dataset.stateId); state.marked = !state.marked; }
             suppressNextDoubleClick = true; drag = null; render(); return;
         }
+        if (activeTool === "add-state" || activeTool === "add-initial") { if (!stateElement && !edgeElement) addStateAt(p, activeTool === "add-initial"); activeTool = "select"; drag = null; return; }
+        if (activeTool === "transition" && stateElement) { if (!transitionSourceId) { transitionSourceId = stateElement.dataset.stateId; selection = { type: "state", id: transitionSourceId }; render(); } else { createTransition(transitionSourceId, stateElement.dataset.stateId); transitionSourceId = null; activeTool = "select"; } return; }
         if (selection && (!edgeElement || selection.id !== edgeElement.dataset.transitionId)) commitSelection();
         if (control) { selection = { type: "transition", id: control.dataset.controlId }; drag = { type: "control", id: control.dataset.controlId }; }
         else if (stateElement) { const createEdge = !layoutOnly && event.shiftKey; selection = { type: "state", id: stateElement.dataset.stateId }; drag = { type: createEdge ? "transition" : "state", id: stateElement.dataset.stateId, start: p }; }
-        else if (edgeElement) { const edge = edgeAt(edgeElement.dataset.transitionId); edge.text ??= edge.eventNames.join(", "); selection = { type: "transition", id: edge.id }; }
+        else if (edgeElement) { const edge = edgeAt(edgeElement.dataset.transitionId); edge.text ??= edge.eventNames.join(", "); selection = { type: "transition", id: edge.id, eventName: eventElement?.dataset.eventName }; }
         else { selection = null; drag = { type: "canvas", start: p, originX: viewport.panX, originY: viewport.panY }; }
         svg.setPointerCapture(event.pointerId);
         if (!layoutOnly && event.detail === 1 && (edgeElement || stateElement)) {
@@ -175,9 +179,9 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (suppressNextDoubleClick) { suppressNextDoubleClick = false; return; }
         const p = point(event), edgeElement = event.target.closest?.("[data-transition-id]"), stateElement = event.target.closest?.("[data-state-id]");
         if (edgeElement) {
-            toggleControllability(edgeAt(edgeElement.dataset.transitionId)); render();
+            toggleControllability(edgeAt(edgeElement.dataset.transitionId), event.target.closest?.("[data-event-name]")?.dataset.eventName); render();
         } else if (stateElement) { const q = stateAt(stateElement.dataset.stateId); q.marked = !q.marked; render(); }
-        else addStateAt(p, event.ctrlKey || event.metaKey);
+        else addStateAt(p, event.altKey || event.metaKey);
     });
 
     function createTransition(sourceId, targetId) {
@@ -192,9 +196,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (event.key === "Escape") { commitSelection(); drag = null; preview = null; selection = null; render(); return; }
         if (!layoutOnly && event.key === "Delete" && selection) {
             event.preventDefault();
-            if (selection.type === "state") { draft.states = draft.states.filter(q => q.id !== selection.id); draft.transitions = draft.transitions.filter(t => t.sourceId !== selection.id && t.targetId !== selection.id); if (draft.initialStateId === selection.id) draft.initialStateId = null; }
-            else draft.transitions = draft.transitions.filter(t => t.id !== selection.id);
-            syncEvents(); selection = null; render(); return;
+            deleteSelection(); return;
         }
         if (layoutOnly || !selection || event.ctrlKey || event.metaKey || event.altKey) return;
         const target = selection.type === "state" ? stateAt(selection.id) : edgeAt(selection.id);
@@ -203,7 +205,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         else if (event.key.length === 1 && target && (selection.type === "transition" || !/\s/.test(event.key))) { event.preventDefault(); value = selection.replaceOnType ? event.key : value + event.key; selection.replaceOnType = false; }
         else return;
         if (selection.type === "state") { if (!draft.states.some(q => q.id !== target.id && q.name === value)) target.name = value; }
-        else target.text = value;
+        else { target.text = value; commitTransition(target); }
         render();
     });
 
@@ -215,7 +217,19 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }, { passive: false });
 
     render();
+    function deleteSelection() {
+        if (!selection || layoutOnly) return;
+        if (selection.type === "state") { draft.states = draft.states.filter(q => q.id !== selection.id); draft.transitions = draft.transitions.filter(t => t.sourceId !== selection.id && t.targetId !== selection.id); if (draft.initialStateId === selection.id) draft.initialStateId = null; }
+        else draft.transitions = draft.transitions.filter(t => t.id !== selection.id);
+        syncEvents(); selection = null; render();
+    }
     return {
+        setTool(tool) { commitSelection(); activeTool = tool; transitionSourceId = null; selection = null; render(); },
+        deleteSelection,
+        toggleMarked() { if (selection?.type === "state") { const state = stateAt(selection.id); state.marked = !state.marked; render(); } },
+        setInitial() { if (selection?.type === "state") { draft.initialStateId = selection.id; render(); } },
+        toggleControllability() { if (selection?.type === "transition") { toggleControllability(edgeAt(selection.id), selection.eventName); render(); } },
+        editSelection() { if (!selection) return; const target = selection.type === "state" ? stateAt(selection.id) : edgeAt(selection.id); const current = selection.type === "state" ? target.name : (target.text ?? target.eventNames.join(", ")); const value = window.prompt(selection.type === "state" ? "State name" : "Comma-separated events", current); if (value === null) return; if (selection.type === "state") { if (!draft.states.some(q => q.id !== target.id && q.name === value.trim())) target.name = value.trim(); } else { target.text = value; commitTransition(target); } render(); },
         loadAutomaton(value, layout) {
             Object.assign(draft, structuredClone(value));
             const savedStates = new Map((layout?.states || []).map(q => [q.state, q]));
