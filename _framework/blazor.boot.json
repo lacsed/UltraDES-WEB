@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-LBi20HGjy/VyXngn7ebTG7oRHaWdvhvApimessI4xsk=",
+    "hash": "sha256-N/OzGuLpiDYEpN3nEUCiApTnL9B1COqjbmxoL5zF2l4=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-JTswf4CBcNmmrTGm6DppxYNII8GVEmbA3iXD3bU1fcA="
     },
@@ -52,7 +52,7 @@
       "System.Drawing.wasm": "sha256-2ZQfw0ArB8rIxhPvv/8cuEsZoIkhYIPpyQl4AjaU5lM=",
       "System.Linq.Expressions.wasm": "sha256-p7VWjTjKtEsJ1WCTiSGajto3XUeJJ+SsrMClwrpje5o=",
       "System.Linq.Parallel.wasm": "sha256-EhHJaAj6osf6bkKOYjJDBr5RKVovnMgGSOQEYTxUPOs=",
-      "System.Linq.wasm": "sha256-nNnMAZdcvLObselrZ7YIFYRnynAqZF6UNB1N4sdkL+8=",
+      "System.Linq.wasm": "sha256-cWgoC4biiNtroBKbKI4QqHUms4LBdE1Rm4Lw/zyRdEI=",
       "System.Memory.wasm": "sha256-cY5F0AsvlS+ZtwOpJRWFMWoPvDZk4MYHrfq+wjqPlbA=",
       "System.Net.Http.wasm": "sha256-Qn6V1jw7pKfpavd4zVkThtpr6xkWykUXcPngsc/VoCc=",
       "System.Net.Primitives.wasm": "sha256-cRm+6PGM324Md90SMykqGAKeiFuFebYkhWUbvf/hVa0=",
@@ -68,7 +68,7 @@
       "System.Runtime.Numerics.wasm": "sha256-/D79d9Ck/5FlvtoFJJrEy+PfAciEgcg76xSIPYJStLI=",
       "System.Runtime.Serialization.Formatters.wasm": "sha256-v1R1OzesnNJ83myWNY9i6JgyAMLrh32b5V5jTia/PcA=",
       "System.Runtime.Serialization.Primitives.wasm": "sha256-MDGNiDXnkkSl1Fi+vNP8TCfICkFu70rSfj/CgQF63eQ=",
-      "System.Runtime.wasm": "sha256-nLfYiry1b3ajjPfM2AT/seEobXsQzwiq+D26TJancy0=",
+      "System.Runtime.wasm": "sha256-4n4CKZQ5aErAypwnpYd5XH23gRiYJ6lZcQ78jjY/nzw=",
       "System.Security.Cryptography.wasm": "sha256-Lo6kQAHca2eckbKFhf22JZmCyED3si/vQeTiBbVw7x4=",
       "System.Text.Encoding.Extensions.wasm": "sha256-t57wmYyeTidSbi/IBEzi/QEvTN4Y3iccdXENdOBBZ9s=",
       "System.Text.Encodings.Web.wasm": "sha256-UZy+kbe6BEXdxJ+P5xmYm6qzbb1g/bVmULSmF8IyAmQ=",
@@ -82,8 +82,8 @@
       "System.Xml.XmlSerializer.wasm": "sha256-tQ2WXyFMI2xiYFxZcKyrR4rPOs/PQxNeIVBAaYKqhdM=",
       "System.wasm": "sha256-j0ZGZpl3U3v6Y5aQxnvY7OqOdRv9E3uPI4tGitwhjXI=",
       "netstandard.wasm": "sha256-ZT+Hm/GuO7UzHrIMKC5suYek2Lw8MGAMi0/5K8Q/AYk=",
-      "System.Private.CoreLib.wasm": "sha256-kGNxC3bs4p+ROrVO0v4S59Cg0YTX4Wv5AamgQvYLaGw=",
-      "UltraDESWeb.wasm": "sha256-pXKROvz268pZ0KDs8tkxGx9HHZDqBJs/gbzUszlPY0U="
+      "System.Private.CoreLib.wasm": "sha256-IGqjWCw7WPTPAzRPVuPRm+Q/cuyjcM39PfE0kkKGbII=",
+      "UltraDESWeb.wasm": "sha256-NNHwNbkOyqEjhmhiG9NKu3yNk2g0/oQzMDpFUAZwWaA="
     }
   },
   "cacheBootResources": true,
