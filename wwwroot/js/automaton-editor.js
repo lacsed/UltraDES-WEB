@@ -31,14 +31,10 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         const start=clippedPoint(a,{x:edge.controlX,y:edge.controlY}), end=clippedPoint(b,{x:edge.controlX,y:edge.controlY});
         return `M ${start.x} ${start.y} Q ${edge.controlX} ${edge.controlY} ${end.x} ${end.y}`;
     }
-    const eventNames = edge => (edge.text ?? edge.eventNames.join(","))
-        .split(",").map(name => name.trim()).filter(Boolean);
     function syncEvents() {
-        const used = new Set(draft.transitions.flatMap(eventNames));
+        const used = new Set(draft.transitions.flatMap(t => t.eventNames).filter(Boolean));
         draft.events = draft.events.filter(e => used.has(e.name));
-        for (const name of used) if (!draft.events.some(e => e.name === name))
-            draft.events.push({id:uid("event"),name,controllable:true});
-        draft.transitions.forEach(edge => edge.eventNames = eventNames(edge));
+        for (const name of used) if (!draft.events.some(e => e.name === name)) draft.events.push({id:uid("event"),name,controllable:true});
     }
     function render() {
         svg.innerHTML = `<defs><marker id="visual-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="visual-arrow-head" d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>`;
@@ -46,18 +42,9 @@ export function createAutomatonEditor(host, layoutOnly = false) {
             const g = document.createElementNS(NS, "g"), path = document.createElementNS(NS, "path");
             g.classList.add("visual-transition"); if (selection?.type === "transition" && selection.id === edge.id) g.classList.add("is-selected");
             path.setAttribute("d", transitionPath(edge)); path.setAttribute("marker-end", "url(#visual-arrow)"); path.dataset.transitionId = edge.id; g.append(path);
-            const names=eventNames(edge), shown=names.length ? names : ["type events"];
-            const widths=shown.map(name => Math.max(42, name.length * 8 + 22)), total=widths.reduce((a,b)=>a+b,0)+(shown.length-1)*6;
-            let labelX=edge.controlX-total/2;
-            shown.forEach((name,index) => {
-                const badge=document.createElementNS(NS,"g"), box=document.createElementNS(NS,"rect"), label=document.createElementNS(NS,"text");
-                box.setAttribute("x",labelX); box.setAttribute("y",edge.controlY-38); box.setAttribute("width",widths[index]); box.setAttribute("height",24); box.setAttribute("rx",4);
-                label.setAttribute("x",labelX+widths[index]/2); label.setAttribute("y",edge.controlY-21); label.setAttribute("text-anchor","middle");
-                const item=draft.events.find(e=>e.name===name); label.textContent=name + (item ? (item.controllable ? " C" : " UC") : "");
-                badge.classList.add("event-badge"); badge.dataset.transitionId=edge.id;
-                if(item) badge.dataset.eventName=name;
-                badge.append(box,label); g.append(badge); labelX+=widths[index]+6;
-            });
+            const label = document.createElementNS(NS, "text"); label.setAttribute("x", edge.controlX); label.setAttribute("y", edge.controlY - 8); label.setAttribute("text-anchor", "middle");
+            const name=edge.eventNames[0] || "type event"; const controllable=draft.events.find(e => e.name === name)?.controllable !== false;
+            label.textContent = `${name} ${controllable ? "(C)" : "(UC)"}`; label.dataset.transitionId = edge.id; g.append(label);
             const control = document.createElementNS(NS, "rect"); control.setAttribute("x", edge.controlX-5); control.setAttribute("y", edge.controlY-5); control.setAttribute("width", 10); control.setAttribute("height", 10); control.dataset.controlId = edge.id; control.classList.add("transition-control"); g.append(control); svg.append(g);
         }
         if (draft.initialStateId) { const q = stateAt(draft.initialStateId), p = document.createElementNS(NS, "path"); p.setAttribute("d", `M ${q.x-70} ${q.y} L ${q.x-30} ${q.y}`); p.setAttribute("marker-end", "url(#visual-arrow)"); p.classList.add("initial-arrow"); svg.append(p); }
@@ -85,30 +72,30 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         render();
     });
     svg.addEventListener("pointerup", e => { const p=point(e); if (!drag) return;
-        if (drag.type === "transition" && drag.moved) { const target=stateUnderPointer(e); if (target) createTransition(drag.id,target.dataset.stateId); }
+        if (drag.type === "transition") { const target=stateUnderPointer(e); if (target) createTransition(drag.id,target.dataset.stateId); }
         drag=null; preview=null; render();
     });
     svg.addEventListener("dblclick", e => {
         if (layoutOnly) return;
-        const p=point(e), eventEl=e.target.closest?.("[data-event-name]"), stateEl=e.target.closest?.("[data-state-id]");
-        if (eventEl) { const item=draft.events.find(x=>x.name===eventEl.dataset.eventName); if(item)item.controllable=!item.controllable; selection={type:"transition",id:eventEl.dataset.transitionId}; render(); }
-        else if (stateEl) { const q=stateAt(stateEl.dataset.stateId); if(e.shiftKey) draft.initialStateId=q.id; else q.marked=!q.marked; render(); }
-        else if (!e.target.closest?.("[data-transition-id]")) addStateAt(p);
+        const p=point(e), edgeEl=e.target.closest?.("[data-transition-id]"), stateEl=e.target.closest?.("[data-state-id]");
+        if (edgeEl) { const edge=draft.transitions.find(t=>t.id===edgeEl.dataset.transitionId), name=edge?.eventNames[0], item=draft.events.find(x=>x.name===name); if(item)item.controllable=!item.controllable; selection={type:"transition",id:edge.id}; render(); }
+        else if (stateEl) { const q=stateAt(stateEl.dataset.stateId); q.marked=!q.marked; render(); }
+        else addStateAt(p);
     });
     function createTransition(sourceId,targetId) {
-        const a=stateAt(sourceId),b=stateAt(targetId), edge={id:uid("transition"),sourceId,targetId,eventNames:[],text:"",controlX:(a.x+b.x)/2,controlY:sourceId===targetId?a.y-90:(a.y+b.y)/2-45};
+        const a=stateAt(sourceId),b=stateAt(targetId), edge={id:uid("transition"),sourceId,targetId,eventNames:[],controlX:(a.x+b.x)/2,controlY:sourceId===targetId?a.y-90:(a.y+b.y)/2-45};
         draft.transitions.push(edge); selection={type:"transition",id:edge.id,replaceOnType:true}; render();
     }
     host.addEventListener("keydown", e => { if (e.key==="Escape") { drag=null; preview=null; selection=null; render(); }
         if (!layoutOnly && e.key==="Delete"&&selection) { e.preventDefault(); if(selection.type==="state") { draft.states=draft.states.filter(q=>q.id!==selection.id); draft.transitions=draft.transitions.filter(t=>t.sourceId!==selection.id&&t.targetId!==selection.id); if(draft.initialStateId===selection.id)draft.initialStateId=null; } else draft.transitions=draft.transitions.filter(t=>t.id!==selection.id); syncEvents(); selection=null; render(); }
         if (!layoutOnly && selection && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const target=selection.type==="state"?stateAt(selection.id):draft.transitions.find(t=>t.id===selection.id);
-            let value=selection.type==="state"?target?.name:(target?.text ?? target?.eventNames.join(",") ?? "");
+            let value=selection.type==="state"?target?.name:(target?.eventNames[0]||"");
             if (e.key==="Backspace" && target) { e.preventDefault(); value=value.slice(0,-1); }
-            else if (e.key.length===1 && (!/\s/.test(e.key) || selection.type==="state") && target) { e.preventDefault(); value=selection.replaceOnType?e.key:value+e.key; selection.replaceOnType=false; }
+            else if (e.key.length===1 && !/\s/.test(e.key) && target) { e.preventDefault(); value=selection.replaceOnType?e.key:value+e.key; selection.replaceOnType=false; }
             else return;
             if (selection.type==="state") { if(value && !draft.states.some(q=>q.id!==target.id&&q.name===value))target.name=value; }
-            else { target.text=value; syncEvents(); }
+            else { const wasControllable=draft.events.find(x=>x.name===target.eventNames[0])?.controllable ?? true; target.eventNames=value?[value]:[]; syncEvents(); const item=draft.events.find(x=>x.name===value); if(item)item.controllable=wasControllable; }
             render();
         }
     });

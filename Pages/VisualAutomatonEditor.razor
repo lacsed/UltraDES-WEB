@@ -16,7 +16,7 @@
 
     <p class="help visual-editor-help">
         @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
-        else { <text>Double-click: add/mark a state. Click and type to rename. Shift+drag: transition. Click and type comma-separated events. Double-click an event badge: toggle control. Shift+double-click a state: set initial.</text> }
+        else { <text>Double-click empty space to add a state. Select it and type to rename it. Hold Shift and drag from a state to create a transition, then type one word for its event. Double-click a transition to toggle controllability. Delete removes the selection.</text> }
     </p>
 
     <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
@@ -68,6 +68,14 @@
                 InitialStateId = Automaton.InitialState.ToString() }, Layout);
         }
     }
+
+    private async Task InvokeEditor(string operation)
+    {
+        if (editor is not null) await editor.InvokeVoidAsync(operation);
+    }
+
+    private Task ToggleMarked() => InvokeEditor("toggleMarked");
+    private Task SetInitial() => InvokeEditor("setInitial");
 
     private async Task Save()
     {
