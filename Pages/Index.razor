@@ -1,7 +1,9 @@
 ﻿@page "/"
 @using global::UltraDES
+@using System.Threading
 @inject IJSRuntime JsRuntime;
 @inject WorkspaceStorage WorkspaceStorage;
+@inject AutomatonLayoutService AutomatonLayoutService;
 
 <nav class="navbar has-shadow has-background-light grid-header" role="navigation" aria-label="main navigation" style="align-items: stretch; display: flex;">
     <div class="navbar-brand">
@@ -91,6 +93,12 @@
     @if (!string.IsNullOrWhiteSpace(workspaceError))
     {
         <div class="notification is-danger" role="alert">@workspaceError</div>
+    }
+    @if (layoutGenerating)
+    {
+        <div class="notification is-info" role="status"><strong>Creating visual layout…</strong> @layoutProgress
+            <button class="button is-small ml-3" type="button" @onclick="CancelVisualLayout">Cancel</button>
+        </div>
     }
     <div class="section" style="width: 300px; height: 100%; background-color: whitesmoke">
         <p class="menu-label">States (<a class="content-button" @onclick="() => ShowStates = !ShowStates">@((ShowStates) ? "- Hide": "+ Show")</a>)</p>
@@ -189,7 +197,8 @@
                                             <div class="level-right"><span><i class="fas fa-project-diagram has-text-info"></i></span></div>
                                         </div>
                                     </a>
-                                    <a @onclick="() => OpenVisualLayout(G.Value)">
+                                    <a @onclick="() => OpenVisualLayout(G.Value)" class="@(CanOpenVisualLayout(G.Value) ? "" : "has-text-grey")"
+                                       aria-disabled="@(!CanOpenVisualLayout(G.Value))" title="@VisualLayoutTitle(G.Value)">
                                         <div class="level is-mobile">
                                             <div class="level-left"><span>Open Visual Layout</span></div>
                                             <div class="level-right"><span><i class="fas fa-edit has-text-info"></i></span></div>
@@ -329,6 +338,9 @@
     private bool largeAutomatonConfirmed;
     private bool confirmationSubmitting;
     private bool renderingAutomaton;
+    private bool layoutGenerating;
+    private string layoutProgress = "";
+    private CancellationTokenSource layoutCancellation;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -512,13 +524,62 @@
         if (!renderingAutomaton) Clear();
     }
 
-    private void OpenVisualLayout(DeterministicFiniteAutomaton value)
+    private bool CanOpenVisualLayout(DeterministicFiniteAutomaton value) =>
+        layouts.ContainsKey(automatonIds[value.Name]) || AutomatonLayoutService.CanConvert(value);
+
+    private string VisualLayoutTitle(DeterministicFiniteAutomaton value) => CanOpenVisualLayout(value)
+        ? "Open or convert to a visual layout"
+        : $"Visual conversion supports at most {AutomatonLayoutService.MaximumStateCount} states.";
+
+    private async Task OpenVisualLayout(DeterministicFiniteAutomaton value)
     {
+        if (layoutGenerating) return;
         automaton = value;
-        layouts.TryGetValue(automatonIds[value.Name], out activeLayout);
+        var id = automatonIds[value.Name];
+        if (!layouts.TryGetValue(id, out activeLayout))
+        {
+            if (!AutomatonLayoutService.CanConvert(value))
+            {
+                workspaceError = $"Visual conversion supports at most {AutomatonLayoutService.MaximumStateCount} states. This automaton has {value.States.Count()} states.";
+                StateHasChanged();
+                return;
+            }
+            workspaceError = "";
+            layoutGenerating = true;
+            layoutProgress = "Preparing the automaton…";
+            layoutCancellation = new CancellationTokenSource();
+            StateHasChanged();
+            try
+            {
+                var progress = new Progress<string>(message => { layoutProgress = message; _ = InvokeAsync(StateHasChanged); });
+                activeLayout = await AutomatonLayoutService.CreateAsync(value, progress, layoutCancellation.Token);
+                layouts[id] = activeLayout;
+                await PersistWorkspaceAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                workspaceError = "Visual layout conversion was cancelled.";
+                return;
+            }
+            finally
+            {
+                layoutGenerating = false;
+                layoutCancellation?.Dispose();
+                layoutCancellation = null;
+            }
+        }
         page = Page.EditVisualLayout;
         StateHasChanged();
     }
+
+    private void CancelVisualLayout() => layoutCancellation?.Cancel();
+
+    private Task PersistWorkspaceAsync() => WorkspaceStorage.SaveAsync(states.Values, events.Values, automata.Select(pair =>
+    {
+        var id = automatonIds[pair.Key];
+        layouts.TryGetValue(id, out var layout);
+        return new StoredAutomaton(id, DeterministicFiniteAutomaton.ToJsonString(pair.Value), layout);
+    }));
 
     private Task SaveVisualLayout(AutomatonLayoutData layout)
     {
