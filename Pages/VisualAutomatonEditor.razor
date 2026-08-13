@@ -16,9 +16,23 @@
 
     <p class="help visual-editor-help">
         @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
-        else { <text>Double-click empty space to add a state, or Ctrl + double-click to add the initial state. Select a state and type its name. Hold Shift and drag between states to create a transition; type comma-separated events while it is selected. Double-click a transition label to toggle its events between controllable (blue) and uncontrollable (red). Delete removes the selection.</text> }
+        else { <text>Double-click empty space to add a state, or Alt/Cmd + double-click to add the initial state. Select a state and type its name. Hold Shift and drag between states to create a transition; type comma-separated events while it is selected. Double-click an event to toggle only that event between controllable (blue) and uncontrollable (red). Delete removes the selection. On touch screens, use the tools below and tap the diagram.</text> }
     </p>
 
+    @if (!LayoutOnly)
+    {
+        <div class="visual-editor-actions" role="toolbar" aria-label="Automaton drawing tools">
+            <button class="button is-small" type="button" @onclick='() => SetTool("select")'>Select / move</button>
+            <button class="button is-small is-info" type="button" @onclick='() => SetTool("add-state")'>Add state</button>
+            <button class="button is-small is-info" type="button" @onclick='() => SetTool("add-initial")'>Add initial</button>
+            <button class="button is-small is-link" type="button" @onclick='() => SetTool("transition")'>Add transition</button>
+            <button class="button is-small" type="button" @onclick="EditSelection">Edit text</button>
+            <button class="button is-small" type="button" @onclick="ToggleMarked">Toggle marked</button>
+            <button class="button is-small" type="button" @onclick="SetInitial">Set initial</button>
+            <button class="button is-small" type="button" @onclick="ToggleControllable">Toggle event</button>
+            <button class="button is-small is-danger" type="button" @onclick="DeleteSelection">Delete</button>
+        </div>
+    }
     <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
     @if (errors.Count > 0)
     {
@@ -76,6 +90,13 @@
 
     private Task ToggleMarked() => InvokeEditor("toggleMarked");
     private Task SetInitial() => InvokeEditor("setInitial");
+    private Task ToggleControllable() => InvokeEditor("toggleControllability");
+    private Task DeleteSelection() => InvokeEditor("deleteSelection");
+    private Task EditSelection() => InvokeEditor("editSelection");
+    private async Task SetTool(string tool)
+    {
+        if (editor is not null) await editor.InvokeVoidAsync("setTool", tool);
+    }
 
     private async Task Save()
     {
