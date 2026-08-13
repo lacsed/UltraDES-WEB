@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-DMNJLx0s3pW/pRjK5qiQYR7gKaJ74WgPLtiqlt41qz8=",
+    "hash": "sha256-YoAQ+NRf4JH0j7PFUa70RFkkgIVrM6etaTWd57mxqN0=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-JTswf4CBcNmmrTGm6DppxYNII8GVEmbA3iXD3bU1fcA="
     },
@@ -26,7 +26,7 @@
       "Microsoft.Extensions.Configuration.Abstractions.wasm": "sha256-XR+WUfg8LtnrwdXFBnV+qO3ROyp6cYCfl1AZajIAheM=",
       "Microsoft.Extensions.Configuration.Json.wasm": "sha256-Nbv4DDWJLbUri+9QrX+3vnA2FV/Qux8Jm1buTARMlBs=",
       "Microsoft.Extensions.DependencyInjection.wasm": "sha256-gPl1KWGxLIxxQgQ9BG1m/niMzqZGG651efBdnDY3kDc=",
-      "Microsoft.Extensions.DependencyInjection.Abstractions.wasm": "sha256-8N90ycDNymJ/i/ho4uF7mzvgwRkjyYOphyEobexU/Z4=",
+      "Microsoft.Extensions.DependencyInjection.Abstractions.wasm": "sha256-PcLEOzpCCeP7aEtZhKxbYbFmcEEcKxzNpm/PAn7W1ec=",
       "Microsoft.Extensions.Logging.wasm": "sha256-KCdgvZvpkT0QTlCjj/PtlVlJnNw1mDlJAtaRSWXz0YM=",
       "Microsoft.Extensions.Logging.Abstractions.wasm": "sha256-A9YPOPFk7TgB+XwPGtvKFsRjY2o6DvUDmbiffBikX0A=",
       "Microsoft.Extensions.Options.wasm": "sha256-mngxZ7DtB5tYzmxZdVWZapJTSJ/yGClqQAcqOkLk3Lk=",
@@ -68,7 +68,7 @@
       "System.Runtime.Numerics.wasm": "sha256-/D79d9Ck/5FlvtoFJJrEy+PfAciEgcg76xSIPYJStLI=",
       "System.Runtime.Serialization.Formatters.wasm": "sha256-v1R1OzesnNJ83myWNY9i6JgyAMLrh32b5V5jTia/PcA=",
       "System.Runtime.Serialization.Primitives.wasm": "sha256-MDGNiDXnkkSl1Fi+vNP8TCfICkFu70rSfj/CgQF63eQ=",
-      "System.Runtime.wasm": "sha256-DRVmVYHKOFdo2Bk47YcOiP01pSPpGZgqOdOH4QGyaDI=",
+      "System.Runtime.wasm": "sha256-anYfH3INQ3hlcDvbs3TEcGNBw39dMEcEHJk5H+uEnzA=",
       "System.Security.Cryptography.wasm": "sha256-Lo6kQAHca2eckbKFhf22JZmCyED3si/vQeTiBbVw7x4=",
       "System.Text.Encoding.Extensions.wasm": "sha256-t57wmYyeTidSbi/IBEzi/QEvTN4Y3iccdXENdOBBZ9s=",
       "System.Text.Encodings.Web.wasm": "sha256-UZy+kbe6BEXdxJ+P5xmYm6qzbb1g/bVmULSmF8IyAmQ=",
@@ -82,8 +82,8 @@
       "System.Xml.XmlSerializer.wasm": "sha256-tQ2WXyFMI2xiYFxZcKyrR4rPOs/PQxNeIVBAaYKqhdM=",
       "System.wasm": "sha256-j0ZGZpl3U3v6Y5aQxnvY7OqOdRv9E3uPI4tGitwhjXI=",
       "netstandard.wasm": "sha256-ZT+Hm/GuO7UzHrIMKC5suYek2Lw8MGAMi0/5K8Q/AYk=",
-      "System.Private.CoreLib.wasm": "sha256-cjtX7LYJjGTfpqLyCiYQyoW3iTe839iwUUY4eZPrlrc=",
-      "UltraDESWeb.wasm": "sha256-1Mex+Tlu0rSaFD6vpmuLVbqH8dK8Pkd7anUukeBCmoA="
+      "System.Private.CoreLib.wasm": "sha256-+MhjW9bVY2bEFMmzu56lr0qzeSKQ2+n2k6TDEyI4vYE=",
+      "UltraDESWeb.wasm": "sha256-z2yGITyEXCZF61viEYO9mvj7P91fodQs/A8cBy2Tf80="
     }
   },
   "cacheBootResources": true,
