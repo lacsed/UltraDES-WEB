@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "sfwyHZ3i",
+  "version": "EN4Yl97N",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-vrCTHCOZhNSGV/sCvYs5iWC7UM2JdeC0W6CPcPPQNlI=",
+      "hash": "sha256-7PmHeboaTPoUUCO5Mf6bOi9X2D9hM1n77TUU/zNjIws=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-AvkUzbXTnuqJit/seUTdlDla4PmExusDBzDFHHB3mIM=",
+      "hash": "sha256-uJwICW8F1+lSP7DKYxKM5MH24wE66K8BJY8aoADJf7Q=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -398,7 +398,7 @@ self.assetsManifest = {
       "url": "index.html"
     },
     {
-      "hash": "sha256-OfcwzLYdp2Hv8ncsJ7vKc7NnRKsuxEqRFEQrM/Qu2E8=",
+      "hash": "sha256-5uIqlUHHQGbnK/H3bAE5EdNPk2/mRlU7UO8UUcFp56Q=",
       "url": "js/automaton-editor.js"
     },
     {
