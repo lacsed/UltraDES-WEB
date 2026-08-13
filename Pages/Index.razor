@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using global::UltraDES
 @inject IJSRuntime JsRuntime;
+@inject WorkspaceStorage WorkspaceStorage;
 
 <nav class="navbar has-shadow has-background-light grid-header" role="navigation" aria-label="main navigation" style="align-items: stretch; display: flex;">
     <div class="navbar-brand">
@@ -286,6 +287,42 @@
     private bool ShowStates = false;
     private bool ShowEvents = false;
     private bool ShowAutomata = true;
+    private bool workspaceLoaded;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var saved = await WorkspaceStorage.LoadAsync();
+        if (saved is not null)
+        {
+            foreach (var state in saved.States)
+                states.TryAdd(state.Alias, new State(state.Alias, state.Marking));
+            foreach (var @event in saved.Events)
+                events.TryAdd(@event.Alias, new Event(@event.Alias, @event.Controllability));
+            foreach (var json in saved.Automata)
+            {
+                try
+                {
+                    foreach (var restored in DeterministicFiniteAutomaton.FromJsonString(json))
+                        automata.TryAdd(restored.Name, restored);
+                }
+                catch
+                {
+                    // Preserve the remaining workspace if a single automaton is invalid.
+                }
+            }
+        }
+
+        workspaceLoaded = true;
+        StateHasChanged();
+    }
+
+    private void PersistWorkspace()
+    {
+        if (workspaceLoaded)
+            _ = WorkspaceStorage.SaveAsync(states.Values, events.Values, automata.Values);
+    }
     private void Clear()
     {
         page = Page.Empty;
@@ -300,6 +337,7 @@
         if (!states.ContainsKey(q.ToString()))
             states.Add(q.ToString(), q);
 
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -308,6 +346,7 @@
         if (!await JsRuntime.Confirm($"Delete State {state}?")) return;
         states.Remove(state);
 
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -318,6 +357,7 @@
         Console.WriteLine(e);
         if (!events.ContainsKey(e.ToString())) events.Add(e.ToString(), e);
 
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -325,6 +365,7 @@
     {
         if (!await JsRuntime.Confirm($"Delete Event {ev}?")) return;
         events.Remove(ev);
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -333,6 +374,7 @@
         page = Page.Empty;
         foreach (var G in aut)
             if (!automata.ContainsKey(G.Name)) automata.Add(G.Name, G);
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -340,6 +382,7 @@
     {
         if (!await JsRuntime.Confirm($"Delete Automaton {aut}?")) return;
         automata.Remove(aut);
+        PersistWorkspace();
         StateHasChanged();
     }
 
@@ -421,7 +464,7 @@
         automata.TryAdd("M1", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["a1"], states["q1"]), (states["q1"], events["b1"], states["q0"]), }, states["q0"], "M1"));
         automata.TryAdd("M2", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["a2"], states["q1"]), (states["q1"], events["b2"], states["q0"]), }, states["q0"], "M2"));
         automata.TryAdd("E", new DeterministicFiniteAutomaton(new[] { (states["q0"], events["b1"], states["q1"]), (states["q1"], events["a2"], states["q0"]), }, states["q0"], "E"));
-
+        PersistWorkspace();
     }
 
     private void LoadFlexibleManufacturingSystem()
@@ -482,7 +525,7 @@
 
         foreach (var g in aut) if (!automata.TryAdd(g.Name, g)) automata[g.Name] = g;
         foreach (var ev in e.Values.Where(ev => !events.TryAdd(ev.ToString(), ev))) events[ev.ToString()] = ev;
-
+        PersistWorkspace();
     }
 
 
