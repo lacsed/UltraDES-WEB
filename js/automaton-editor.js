@@ -17,26 +17,34 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
 
     function addStateAt(p) {
-        const raw = window.prompt("State name (must be unique):");
-        if (raw === null) return;
-        const name = raw.trim();
-        if (!name) return void window.alert("State name cannot be blank.");
-        if (draft.states.some(q => q.name === name)) return void window.alert("State names must be unique.");
-        draft.states.push({ id: uid("state"), name, marked: false, x: p.x, y: p.y }); render();
+        let index = draft.states.length;
+        while (draft.states.some(q => q.name === `q${index}`)) index++;
+        const state = { id: uid("state"), name: `q${index}`, marked: false, x: p.x, y: p.y };
+        draft.states.push(state);
+        selection = { type: "state", id: state.id, replaceOnType: true };
+        render();
     }
+    const clippedPoint = (from, to, radius = 32) => { const dx=to.x-from.x, dy=to.y-from.y, length=Math.hypot(dx,dy)||1; return {x:from.x+dx*radius/length,y:from.y+dy*radius/length}; };
     function transitionPath(edge) {
         const a = stateAt(edge.sourceId), b = stateAt(edge.targetId);
         if (a.id === b.id) return `M ${a.x-18} ${a.y-20} Q ${edge.controlX} ${edge.controlY} ${a.x+18} ${a.y-20}`;
-        return `M ${a.x} ${a.y} Q ${edge.controlX} ${edge.controlY} ${b.x} ${b.y}`;
+        const start=clippedPoint(a,{x:edge.controlX,y:edge.controlY}), end=clippedPoint(b,{x:edge.controlX,y:edge.controlY});
+        return `M ${start.x} ${start.y} Q ${edge.controlX} ${edge.controlY} ${end.x} ${end.y}`;
+    }
+    function syncEvents() {
+        const used = new Set(draft.transitions.flatMap(t => t.eventNames).filter(Boolean));
+        draft.events = draft.events.filter(e => used.has(e.name));
+        for (const name of used) if (!draft.events.some(e => e.name === name)) draft.events.push({id:uid("event"),name,controllable:true});
     }
     function render() {
-        svg.innerHTML = `<defs><marker id="visual-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>`;
+        svg.innerHTML = `<defs><marker id="visual-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="visual-arrow-head" d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>`;
         for (const edge of draft.transitions) {
             const g = document.createElementNS(NS, "g"), path = document.createElementNS(NS, "path");
             g.classList.add("visual-transition"); if (selection?.type === "transition" && selection.id === edge.id) g.classList.add("is-selected");
             path.setAttribute("d", transitionPath(edge)); path.setAttribute("marker-end", "url(#visual-arrow)"); path.dataset.transitionId = edge.id; g.append(path);
             const label = document.createElementNS(NS, "text"); label.setAttribute("x", edge.controlX); label.setAttribute("y", edge.controlY - 8); label.setAttribute("text-anchor", "middle");
-            label.textContent = edge.eventNames.map(n => `${draft.events.find(e => e.name === n)?.controllable ? "🔓" : "🔒"} ${n}`).join(", "); label.dataset.transitionId = edge.id; g.append(label);
+            const name=edge.eventNames[0] || "type event"; const controllable=draft.events.find(e => e.name === name)?.controllable !== false;
+            label.textContent = `${name} ${controllable ? "(C)" : "(UC)"}`; label.dataset.transitionId = edge.id; g.append(label);
             const control = document.createElementNS(NS, "rect"); control.setAttribute("x", edge.controlX-5); control.setAttribute("y", edge.controlY-5); control.setAttribute("width", 10); control.setAttribute("height", 10); control.dataset.controlId = edge.id; control.classList.add("transition-control"); g.append(control); svg.append(g);
         }
         if (draft.initialStateId) { const q = stateAt(draft.initialStateId), p = document.createElementNS(NS, "path"); p.setAttribute("d", `M ${q.x-70} ${q.y} L ${q.x-30} ${q.y}`); p.setAttribute("marker-end", "url(#visual-arrow)"); p.classList.add("initial-arrow"); svg.append(p); }
@@ -51,7 +59,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     svg.addEventListener("pointerdown", e => {
         host.focus(); const p = point(e), control = e.target.closest?.("[data-control-id]"), stateEl = e.target.closest?.("[data-state-id]"), edgeEl = e.target.closest?.("[data-transition-id]");
         if (control) { selection = { type: "transition", id: control.dataset.controlId }; drag = { type: "control", id: control.dataset.controlId }; }
-        else if (stateEl) { const q=stateAt(stateEl.dataset.stateId), fromEdge=!layoutOnly && Math.hypot(p.x-q.x,p.y-q.y)>20; selection = { type: "state", id: stateEl.dataset.stateId }; drag = { type: fromEdge ? "transition" : "state", id: stateEl.dataset.stateId, start: p, moved: false }; }
+        else if (stateEl) { const createEdge=!layoutOnly && e.shiftKey; selection = { type: "state", id: stateEl.dataset.stateId }; drag = { type: createEdge ? "transition" : "state", id: stateEl.dataset.stateId, start: p, moved: false }; }
         else if (edgeEl) selection = { type: "transition", id: edgeEl.dataset.transitionId };
         else { selection = null; drag = { type: "canvas", start: p, originX: viewport.panX, originY: viewport.panY, moved: false }; }
         svg.setPointerCapture(e.pointerId); render();
@@ -64,25 +72,36 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         render();
     });
     svg.addEventListener("pointerup", e => { const p=point(e); if (!drag) return;
-        if (!layoutOnly && drag.type === "canvas" && Math.hypot(p.x-drag.start.x,p.y-drag.start.y)<5) addStateAt(p);
-        else if (drag.type === "transition") { const target=stateUnderPointer(e); if (target) createTransition(drag.id,target.dataset.stateId); }
+        if (drag.type === "transition") { const target=stateUnderPointer(e); if (target) createTransition(drag.id,target.dataset.stateId); }
         drag=null; preview=null; render();
     });
+    svg.addEventListener("dblclick", e => {
+        if (layoutOnly) return;
+        const p=point(e), edgeEl=e.target.closest?.("[data-transition-id]"), stateEl=e.target.closest?.("[data-state-id]");
+        if (edgeEl) { const edge=draft.transitions.find(t=>t.id===edgeEl.dataset.transitionId), name=edge?.eventNames[0], item=draft.events.find(x=>x.name===name); if(item)item.controllable=!item.controllable; selection={type:"transition",id:edge.id}; render(); }
+        else if (stateEl) { const q=stateAt(stateEl.dataset.stateId); q.marked=!q.marked; render(); }
+        else addStateAt(p);
+    });
     function createTransition(sourceId,targetId) {
-        if (!draft.events.length) return void window.alert("Create an event first.");
-        const raw=window.prompt("Comma-separated event names:"); if (raw===null) return;
-        const names=raw.split(",").map(x=>x.trim());
-        if (names.some(x=>!x)) return void window.alert("Event entries cannot be empty.");
-        if (names.some(n=>!draft.events.some(e=>e.name===n))) return void window.alert("Every event must be created before it is used.");
-        const a=stateAt(sourceId),b=stateAt(targetId); draft.transitions.push({id:uid("transition"),sourceId,targetId,eventNames:[...new Set(names)],controlX:(a.x+b.x)/2,controlY:sourceId===targetId?a.y-90:(a.y+b.y)/2-45});
+        const a=stateAt(sourceId),b=stateAt(targetId), edge={id:uid("transition"),sourceId,targetId,eventNames:[],controlX:(a.x+b.x)/2,controlY:sourceId===targetId?a.y-90:(a.y+b.y)/2-45};
+        draft.transitions.push(edge); selection={type:"transition",id:edge.id,replaceOnType:true}; render();
     }
     host.addEventListener("keydown", e => { if (e.key==="Escape") { drag=null; preview=null; selection=null; render(); }
-        if (!layoutOnly && (e.key==="Delete"||e.key==="Backspace")&&selection) { e.preventDefault(); if(selection.type==="state") { draft.states=draft.states.filter(q=>q.id!==selection.id); draft.transitions=draft.transitions.filter(t=>t.sourceId!==selection.id&&t.targetId!==selection.id); if(draft.initialStateId===selection.id)draft.initialStateId=null; } else draft.transitions=draft.transitions.filter(t=>t.id!==selection.id); selection=null; render(); }
+        if (!layoutOnly && e.key==="Delete"&&selection) { e.preventDefault(); if(selection.type==="state") { draft.states=draft.states.filter(q=>q.id!==selection.id); draft.transitions=draft.transitions.filter(t=>t.sourceId!==selection.id&&t.targetId!==selection.id); if(draft.initialStateId===selection.id)draft.initialStateId=null; } else draft.transitions=draft.transitions.filter(t=>t.id!==selection.id); syncEvents(); selection=null; render(); }
+        if (!layoutOnly && selection && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const target=selection.type==="state"?stateAt(selection.id):draft.transitions.find(t=>t.id===selection.id);
+            let value=selection.type==="state"?target?.name:(target?.eventNames[0]||"");
+            if (e.key==="Backspace" && target) { e.preventDefault(); value=value.slice(0,-1); }
+            else if (e.key.length===1 && !/\s/.test(e.key) && target) { e.preventDefault(); value=selection.replaceOnType?e.key:value+e.key; selection.replaceOnType=false; }
+            else return;
+            if (selection.type==="state") { if(value && !draft.states.some(q=>q.id!==target.id&&q.name===value))target.name=value; }
+            else { const wasControllable=draft.events.find(x=>x.name===target.eventNames[0])?.controllable ?? true; target.eventNames=value?[value]:[]; syncEvents(); const item=draft.events.find(x=>x.name===value); if(item)item.controllable=wasControllable; }
+            render();
+        }
     });
     svg.addEventListener("wheel", e => { if (!layoutOnly) return; e.preventDefault(); const before=point(e), factor=e.deltaY<0?1.12:1/1.12; viewport.zoom=Math.max(.25,Math.min(4,viewport.zoom*factor)); updateViewBox(); const after=point(e); viewport.panX += before.x-after.x; viewport.panY += before.y-after.y; updateViewBox(); }, {passive:false});
     render();
     return {
-        addEvent(e) { if (!layoutOnly) draft.events.push({id:e.id,name:e.name,controllable:e.controllable}); },
         loadAutomaton(value, layout) { Object.assign(draft, structuredClone(value));
             const savedStates = new Map((layout?.states || []).map(q => [q.state, q]));
             draft.states.forEach((q,i) => { const saved=savedStates.get(q.name); q.x=saved?.x ?? 100+(i%6)*130; q.y=saved?.y ?? 100+Math.floor(i/6)*120; });

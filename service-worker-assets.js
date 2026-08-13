@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "xwrL0lCi",
+  "version": "sfwyHZ3i",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -14,7 +14,7 @@ self.assetsManifest = {
       "url": "UltraDESWeb.styles.css"
     },
     {
-      "hash": "sha256-oUpP/c+gPK8XgFjFEC6kT63gIyCbK4xnW2tHgFcP7E8=",
+      "hash": "sha256-Rb9yblpmy+ZN0SwAFPlMUAE2eLUHo5ifVqaaDhHAYmw=",
       "url": "_framework/Microsoft.AspNetCore.Components.Web.wasm"
     },
     {
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-R4vFmYwjwO/Q25DxhIgPYeXvG8AcVzUV5rsvQwZAx/Q=",
+      "hash": "sha256-vrCTHCOZhNSGV/sCvYs5iWC7UM2JdeC0W6CPcPPQNlI=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-73f35Tr6fnmKqLBkgvQJh5lpCcdSWCIXKb9S7kGsrAk=",
+      "hash": "sha256-AvkUzbXTnuqJit/seUTdlDla4PmExusDBzDFHHB3mIM=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -318,7 +318,7 @@ self.assetsManifest = {
       "url": "css/all.css"
     },
     {
-      "hash": "sha256-D8XMrGtrQH4SXPG5bbbh41BJUZVj+aoJygVp1a+ncds=",
+      "hash": "sha256-wilzEMT+/LMamvHUQcGCgcaS5X3mtNaY8sLkpOVfEys=",
       "url": "css/app.css"
     },
     {
@@ -398,7 +398,7 @@ self.assetsManifest = {
       "url": "index.html"
     },
     {
-      "hash": "sha256-XE+ZRLwNPYxIN/O5C9uQLepnASAZ6/N0F8YD7tsvU8M=",
+      "hash": "sha256-OfcwzLYdp2Hv8ncsJ7vKc7NnRKsuxEqRFEQrM/Qu2E8=",
       "url": "js/automaton-editor.js"
     },
     {
