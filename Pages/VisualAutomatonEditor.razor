@@ -4,6 +4,8 @@
 @inject IJSRuntime JS
 
 <div class="visual-automaton-editor">
+    @if (!LayoutOnly)
+    {
     <div class="visual-editor-toolbar">
         <div class="field">
             <label class="label" for="visual-automaton-name">Automaton name</label>
@@ -35,15 +37,18 @@
             }
         </div>
     </div>
+    }
 
     <p class="help visual-editor-help">
-        Click or double-click empty space to add a state. Drag from a state to another state (or itself) to add a transition.
-        Click a state to select it; use the toolbar buttons to mark it or make it initial. Drag states and square transition handles to arrange the diagram.
-        Press Delete/Backspace to remove the selection and Escape to cancel an action.
+        @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
+        else { <text>Click empty space to add a state. Drag from a state to another state (or itself) to add a transition. Select states to mark or make initial; Delete removes the selection.</text> }
     </p>
     <div class="visual-editor-actions" role="toolbar" aria-label="Selected state actions">
-        <button class="button" type="button" @onclick="ToggleMarked">Toggle marked</button>
-        <button class="button" type="button" @onclick="SetInitial">Set initial</button>
+        @if (!LayoutOnly)
+        {
+            <button class="button" type="button" @onclick="ToggleMarked">Toggle marked</button>
+            <button class="button" type="button" @onclick="SetInitial">Set initial</button>
+        }
         <span class="visual-editor-legend"><i class="fas fa-lock-open" aria-hidden="true"></i> Controllable &nbsp; <i class="fas fa-lock" aria-hidden="true"></i> Uncontrollable</span>
     </div>
 
@@ -53,7 +58,7 @@
         <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
     }
     <div class="buttons mt-4">
-        <button class="button is-success" type="button" @onclick="Save">Create Automaton</button>
+        <button class="button is-success" type="button" @onclick="Save">@(LayoutOnly ? "Save Layout" : "Create Automaton")</button>
         <button class="button is-danger" type="button" @onclick="OnCancel">Cancel</button>
     </div>
 </div>
@@ -62,6 +67,10 @@
     [Parameter] public Func<DeterministicFiniteAutomaton, bool> OnSuccess { get; set; }
     [Parameter] public Action OnCancel { get; set; }
     [Parameter] public IEnumerable<string> ExistingAutomatonNames { get; set; } = Array.Empty<string>();
+    [Parameter] public DeterministicFiniteAutomaton Automaton { get; set; }
+    [Parameter] public AutomatonLayoutData Layout { get; set; }
+    [Parameter] public Func<AutomatonLayoutData, Task> OnLayoutSaved { get; set; }
+    private bool LayoutOnly => Automaton is not null;
 
     // These DTOs deliberately keep the mutable visual draft separate from UltraDES.
     public sealed class DraftState { public string Id { get; set; } public string Name { get; set; } public bool Marked { get; set; } public double X { get; set; } public double Y { get; set; } }
@@ -82,7 +91,18 @@
     {
         if (!firstRender) return;
         module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/automaton-editor.js");
-        editor = await module.InvokeAsync<IJSObjectReference>("createAutomatonEditor", editorHost);
+        editor = await module.InvokeAsync<IJSObjectReference>("createAutomatonEditor", editorHost, LayoutOnly);
+        if (LayoutOnly)
+        {
+            automatonName = Automaton.Name;
+            var states = Automaton.States.Select(q => new DraftState { Id = q.ToString(), Name = q.ToString(), Marked = q.IsMarked }).ToArray();
+            var events = Automaton.Events.Select(e => new DraftEvent { Id = e.ToString(), Name = e.ToString(), Controllable = e.IsControllable }).ToArray();
+            var transitions = Automaton.Transitions.GroupBy(t => (Source: t.Origin.ToString(), Target: t.Destination.ToString()))
+                .Select((group, index) => new DraftTransition { Id = $"transition-{index}", SourceId = group.Key.Source, TargetId = group.Key.Target,
+                    EventNames = group.Select(t => t.Trigger.ToString()).OrderBy(x => x).ToArray() }).ToArray();
+            await editor.InvokeVoidAsync("loadAutomaton", new AutomatonDraft { States = states, Events = events, Transitions = transitions,
+                InitialStateId = Automaton.InitialState.ToString() }, Layout);
+        }
     }
 
     private async Task AddEvent()
@@ -109,6 +129,12 @@
     private async Task Save()
     {
         errors.Clear();
+        if (LayoutOnly)
+        {
+            var layout = await editor.InvokeAsync<AutomatonLayoutData>("getLayout");
+            if (OnLayoutSaved is not null) await OnLayoutSaved(layout);
+            return;
+        }
         var draft = await editor.InvokeAsync<AutomatonDraft>("getDraft");
         var validationDraft = new AutomatonDraftValidator.Draft(automatonName,
             draft.States.Select(q => new AutomatonDraftValidator.StateDraft(q.Id, q.Name, q.Marked)).ToArray(),

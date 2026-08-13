@@ -189,6 +189,12 @@
                                             <div class="level-right"><span><i class="fas fa-project-diagram has-text-info"></i></span></div>
                                         </div>
                                     </a>
+                                    <a @onclick="() => OpenVisualLayout(G.Value)">
+                                        <div class="level is-mobile">
+                                            <div class="level-left"><span>Open Visual Layout</span></div>
+                                            <div class="level-right"><span><i class="fas fa-edit has-text-info"></i></span></div>
+                                        </div>
+                                    </a>
                                     <a @onclick="() => VerifyOpacityAutomaton(G.Value)">
                                         <div class="level is-mobile">
                                             <div class="level-left"><span>Opacity/Diagnostic</span></div>
@@ -236,6 +242,11 @@
                     <GraphViz DotCode="@automaton.ToDotCode" OnCancel="@Clear"></GraphViz>
                 </Modal>
                 break;
+            case Page.EditVisualLayout:
+                <Modal Title="@(activeLayout is null ? $"Create Visual Layout — {automaton.Name}" : $"Open Visual Layout — {automaton.Name}")" OnClose="@Clear">
+                    <VisualAutomatonEditor Automaton="automaton" Layout="activeLayout" OnLayoutSaved="SaveVisualLayout" OnCancel="@Clear" />
+                </Modal>
+                break;
             case Page.VerifyOpacityAutomaton:
                 <Modal Title="@automaton.Name" OnClose="@Clear">
                     <VerifyOpacity Automaton="@automaton" OnCancel="@Clear" OnSuccess="G => AddAutomaton(new[]{G})"></VerifyOpacity>
@@ -281,6 +292,7 @@
         CreateAutomaton,
         CreateVisualAutomaton,
         ShowAutomaton,
+        EditVisualLayout,
         VerifyOpacityAutomaton,
         AutomatonSummary,
         CreateSupervisor,
@@ -292,8 +304,11 @@
     private readonly Dictionary<string, AbstractState> states = new Dictionary<string, AbstractState>();
     private readonly Dictionary<string, AbstractEvent> events = new Dictionary<string, AbstractEvent>();
     private readonly Dictionary<string, DeterministicFiniteAutomaton> automata = new Dictionary<string, DeterministicFiniteAutomaton>();
+    private readonly Dictionary<string, string> automatonIds = new();
+    private readonly Dictionary<string, AutomatonLayoutData> layouts = new();
     private Page page = Page.Empty;
     private DeterministicFiniteAutomaton automaton = null;
+    private AutomatonLayoutData activeLayout;
     private bool ShowStates = false;
     private bool ShowEvents = false;
     private bool ShowAutomata = true;
@@ -311,11 +326,13 @@
                 states.TryAdd(state.Alias, new State(state.Alias, state.Marking));
             foreach (var @event in saved.Events)
                 events.TryAdd(@event.Alias, new Event(@event.Alias, @event.Controllability));
-            foreach (var json in saved.Automata)
+            foreach (var stored in saved.Automata)
             {
                 try
                 {
-                    AddAutomaton(DeterministicFiniteAutomaton.FromJsonString(json), false);
+                    var loaded = DeterministicFiniteAutomaton.FromJsonString(stored.Json).Single();
+                    if (AddAutomaton(loaded, false, stored.Id) && stored.Layout is not null)
+                        layouts[stored.Id] = stored.Layout;
                 }
                 catch
                 {
@@ -331,7 +348,12 @@
     private void PersistWorkspace()
     {
         if (workspaceLoaded)
-            _ = WorkspaceStorage.SaveAsync(states.Values, events.Values, automata.Values);
+            _ = WorkspaceStorage.SaveAsync(states.Values, events.Values, automata.Select(pair =>
+            {
+                var id = automatonIds[pair.Key];
+                layouts.TryGetValue(id, out var layout);
+                return new StoredAutomaton(id, DeterministicFiniteAutomaton.ToJsonString(pair.Value), layout);
+            }));
     }
     private void Clear()
     {
@@ -402,6 +424,7 @@
             foreach (var q in G.States) states.TryAdd(q.ToString(), q);
             foreach (var e in G.Events) events.TryAdd(e.ToString(), e);
             automata.Add(G.Name, G);
+            automatonIds[G.Name] = Guid.NewGuid().ToString("N");
         }
         if (closeEditor) page = Page.Empty;
         PersistWorkspace();
@@ -409,10 +432,18 @@
         return true;
     }
 
+    private bool AddAutomaton(DeterministicFiniteAutomaton value, bool closeEditor, string stableId)
+    {
+        if (!AddAutomaton(new[] { value }, closeEditor)) return false;
+        automatonIds[value.Name] = stableId;
+        return true;
+    }
+
     private async void RemoveAutomaton(string aut)
     {
         if (!await JsRuntime.Confirm($"Delete Automaton {aut}?")) return;
         automata.Remove(aut);
+        if (automatonIds.Remove(aut, out var id)) layouts.Remove(id);
         PersistWorkspace();
         StateHasChanged();
     }
@@ -424,6 +455,23 @@
         page = Page.ShowAutomaton;
         automaton = G;
         StateHasChanged();
+    }
+
+    private void OpenVisualLayout(DeterministicFiniteAutomaton value)
+    {
+        automaton = value;
+        layouts.TryGetValue(automatonIds[value.Name], out activeLayout);
+        page = Page.EditVisualLayout;
+        StateHasChanged();
+    }
+
+    private Task SaveVisualLayout(AutomatonLayoutData layout)
+    {
+        layouts[automatonIds[automaton.Name]] = layout;
+        activeLayout = layout;
+        PersistWorkspace();
+        Clear();
+        return Task.CompletedTask;
     }
 
     private void VerifyOpacityAutomaton(DeterministicFiniteAutomaton G)
