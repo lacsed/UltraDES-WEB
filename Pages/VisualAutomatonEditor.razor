@@ -11,37 +11,12 @@
             <label class="label" for="visual-automaton-name">Automaton name</label>
             <input id="visual-automaton-name" class="input" @bind="automatonName" />
         </div>
-        <form class="visual-event-form" @onsubmit="AddEvent" @onsubmit:preventDefault>
-            <div class="field">
-                <label class="label" for="visual-event-name">New event</label>
-                <input id="visual-event-name" class="input" @bind="eventName" placeholder="e.g. start" />
-            </div>
-            <div class="field">
-                <label class="label" for="visual-event-kind">Controllability</label>
-                <div class="select is-fullwidth">
-                    <select id="visual-event-kind" @bind="eventControllable">
-                        <option value="true">Controllable</option>
-                        <option value="false">Uncontrollable</option>
-                    </select>
-                </div>
-            </div>
-            <button class="button is-info" type="submit">Add event</button>
-        </form>
-        <div class="visual-event-list" aria-label="Draft events">
-            @foreach (var draftEvent in draftEvents)
-            {
-                <span class="tag @(draftEvent.Controllable ? "is-success" : "is-warning")">
-                    <i class="fas @(draftEvent.Controllable ? "fa-lock-open" : "fa-lock")" aria-hidden="true"></i>&nbsp;
-                    @draftEvent.Name (@(draftEvent.Controllable ? "controllable" : "uncontrollable"))
-                </span>
-            }
-        </div>
     </div>
     }
 
     <p class="help visual-editor-help">
         @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
-        else { <text>Click empty space to add a state. Drag from a state to another state (or itself) to add a transition. Select states to mark or make initial; Delete removes the selection.</text> }
+        else { <text>Double-click empty space to add a state. Select it and type to rename it. Hold Shift and drag from a state to create a transition, then type one word for its event. Double-click a transition to toggle controllability. Delete removes the selection.</text> }
     </p>
     <div class="visual-editor-actions" role="toolbar" aria-label="Selected state actions">
         @if (!LayoutOnly)
@@ -82,10 +57,7 @@
     private IJSObjectReference module;
     private IJSObjectReference editor;
     private string automatonName = "";
-    private string eventName = "";
-    private string eventControllable = "true";
     private readonly List<string> errors = new();
-    private readonly List<DraftEvent> draftEvents = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -103,19 +75,6 @@
             await editor.InvokeVoidAsync("loadAutomaton", new AutomatonDraft { States = states, Events = events, Transitions = transitions,
                 InitialStateId = Automaton.InitialState.ToString() }, Layout);
         }
-    }
-
-    private async Task AddEvent()
-    {
-        errors.Clear();
-        var name = eventName.Trim();
-        if (string.IsNullOrWhiteSpace(name)) { errors.Add("Event name cannot be blank."); return; }
-        if (name.Contains(',')) { errors.Add("An event name cannot contain a comma."); return; }
-        if (draftEvents.Any(e => string.Equals(e.Name, name, StringComparison.Ordinal))) { errors.Add("Event names must be unique."); return; }
-        var item = new DraftEvent { Id = Guid.NewGuid().ToString("N"), Name = name, Controllable = eventControllable == "true" };
-        draftEvents.Add(item);
-        eventName = "";
-        await editor.InvokeVoidAsync("addEvent", item);
     }
 
     private async Task InvokeEditor(string operation)
