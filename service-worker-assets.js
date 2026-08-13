@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "TzkCBPSj",
+  "version": "tuS2jxo1",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -14,7 +14,7 @@ self.assetsManifest = {
       "url": "UltraDESWeb.styles.css"
     },
     {
-      "hash": "sha256-Rb9yblpmy+ZN0SwAFPlMUAE2eLUHo5ifVqaaDhHAYmw=",
+      "hash": "sha256-oUpP/c+gPK8XgFjFEC6kT63gIyCbK4xnW2tHgFcP7E8=",
       "url": "_framework/Microsoft.AspNetCore.Components.Web.wasm"
     },
     {
@@ -22,7 +22,7 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.AspNetCore.Components.WebAssembly.wasm"
     },
     {
-      "hash": "sha256-slDFSo8Kb4MiBh89+bKeongP4PfR3pawcmLcsWgbPsU=",
+      "hash": "sha256-ECxcqJDk3lvc9dxmueo0haIZSjLVzBPuLKgnRYakS4I=",
       "url": "_framework/Microsoft.AspNetCore.Components.wasm"
     },
     {
@@ -74,7 +74,7 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.JSInterop.WebAssembly.wasm"
     },
     {
-      "hash": "sha256-ICXLq30Kx12ovtFDxzAoE/0fmcaLmtQPle25CPQpiBY=",
+      "hash": "sha256-8jvMO92KpF4ORnaWKC21TYfkO4/0xoWebxkLqfSb8Wg=",
       "url": "_framework/Microsoft.JSInterop.wasm"
     },
     {
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-z2yGITyEXCZF61viEYO9mvj7P91fodQs/A8cBy2Tf80=",
+      "hash": "sha256-ymP4cQkwlRm1CtzLk/ZP4rMAKsSDE04OPEw2qkzpt38=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-uwFSWxZqNcXtr+BjimSuapWFr+tcCSNhDsTz4FdDeuk=",
+      "hash": "sha256-RqTMIu26FQ/prnUWIftB6Yvo/eGgVYArQPhzwpSopXU=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -318,7 +318,7 @@ self.assetsManifest = {
       "url": "css/all.css"
     },
     {
-      "hash": "sha256-XgBc0E/NdEl2gJFQV+nkabe3CrvAhbe2vA7olCRMPpY=",
+      "hash": "sha256-D8XMrGtrQH4SXPG5bbbh41BJUZVj+aoJygVp1a+ncds=",
       "url": "css/app.css"
     },
     {
@@ -394,8 +394,12 @@ self.assetsManifest = {
       "url": "img/logo_lacsed.png"
     },
     {
-      "hash": "sha256-TwlsfgHPUQsL1g+WwpxeT0Ct8+dyCSDlyVRkoOrHVsQ=",
+      "hash": "sha256-RlcJQxUXgG9Qq8TG/1LGf60/unDxbXs/aDW5wxfa7F0=",
       "url": "index.html"
+    },
+    {
+      "hash": "sha256-CmXVtPC+3+CcSNy+V8sttB6afanA+7o+HZhnhe1Tpsg=",
+      "url": "js/automaton-editor.js"
     },
     {
       "hash": "sha256-UshIov+Ixecxt/PzkL15Tpzl8KsmdivXUjdq1fVMlT0=",
