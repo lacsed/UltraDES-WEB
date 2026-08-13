@@ -18,4 +18,8 @@
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="UltraDESWeb.Tests/**/*.cs" />
+  </ItemGroup>
+
 </Project>
