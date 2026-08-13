@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "EN4Yl97N",
+  "version": "bo3hySk/",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-7PmHeboaTPoUUCO5Mf6bOi9X2D9hM1n77TUU/zNjIws=",
+      "hash": "sha256-ca2rWPP52uR2aD4o2Z+OpsnIqG8lnT/st4C2fS/Kef8=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-uJwICW8F1+lSP7DKYxKM5MH24wE66K8BJY8aoADJf7Q=",
+      "hash": "sha256-g1fxAzaTBBNWZ6L3uHLY2l/eskda4nz5ea88E2FSd+Q=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -318,7 +318,7 @@ self.assetsManifest = {
       "url": "css/all.css"
     },
     {
-      "hash": "sha256-wilzEMT+/LMamvHUQcGCgcaS5X3mtNaY8sLkpOVfEys=",
+      "hash": "sha256-D0Wxkgfb8fMK6s8KYoJasdwrbKMxU7dIqMacAN/TKKg=",
       "url": "css/app.css"
     },
     {
@@ -398,7 +398,7 @@ self.assetsManifest = {
       "url": "index.html"
     },
     {
-      "hash": "sha256-5uIqlUHHQGbnK/H3bAE5EdNPk2/mRlU7UO8UUcFp56Q=",
+      "hash": "sha256-EASiLlbzD2UNP26Ehpf9G4AeRiWob+IXbKK/n0oalVE=",
       "url": "js/automaton-editor.js"
     },
     {
