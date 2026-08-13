@@ -16,7 +16,7 @@
 
     <p class="help visual-editor-help">
         @if (LayoutOnly) { <text>Drag states and square transition handles to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. The automaton structure is read-only.</text> }
-        else { <text>Double-click empty space to add a state. Select it and type to rename it. Hold Shift and drag from a state to create a transition, then type one word for its event. Double-click a transition to toggle controllability. Delete removes the selection.</text> }
+        else { <text>Double-click empty space to add a state, or Ctrl + double-click to add the initial state. Select a state and type its name. Hold Shift and drag between states to create a transition; type comma-separated events while it is selected. Double-click a transition label to toggle its events between controllable (blue) and uncontrollable (red). Delete removes the selection.</text> }
     </p>
 
     <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
