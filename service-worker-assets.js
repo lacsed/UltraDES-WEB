@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "XSFZvyq+",
+  "version": "BWhzVtKs",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-NNHwNbkOyqEjhmhiG9NKu3yNk2g0/oQzMDpFUAZwWaA=",
+      "hash": "sha256-taPol6BHqSIrfqHbNLCsuElkETSYfGbAcoLM0pcCVk0=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-J2V0/IYmtMvc+lQWql1QBWK5IiHWFxiJL4x6TSx/vfU=",
+      "hash": "sha256-NdmXMzaKgPQFR4YOGytbwOGVCDWJVpRcm9qmGvAeFWA=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -318,7 +318,7 @@ self.assetsManifest = {
       "url": "css/all.css"
     },
     {
-      "hash": "sha256-k0oTgVIlx8fDWELEpX7pE08NBvOC3OSzKeFZbm4OgpY=",
+      "hash": "sha256-x23N5OzowTLQVsdNt1vTi82eMnZHVtZikHuI94rjI7s=",
       "url": "css/app.css"
     },
     {

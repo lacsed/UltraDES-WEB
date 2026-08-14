@@ -92,6 +92,7 @@ footer {
 .quick-grid button:hover { border-color: #b9cdf7; box-shadow: 0 10px 28px rgb(28 49 87 / 9%); transform: translateY(-2px); }
 .quick-grid i { display: grid; place-items: center; width: 40px; height: 40px; flex: none; color: var(--primary); background: #eaf1ff; border-radius: 10px; }
 .quick-grid span { display: flex; min-width: 0; flex-direction: column; }.quick-grid strong { font-size: .9rem; }.quick-grid small { margin-top: .2rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-automata { display: none; }
 .app-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem clamp(1rem, 3vw, 3rem); color: var(--muted); font-size: .78rem; background: white; border-top: 1px solid var(--line); }
 .app-footer a { color: var(--primary); font-weight: 700; }
 .modal-card { width: min(760px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); border-radius: 16px; box-shadow: 0 24px 70px rgb(10 24 50 / 28%); }
@@ -130,6 +131,25 @@ footer {
     .welcome-panel { min-height: 0; }
     .welcome-copy h2 { font-size: clamp(2.2rem, 12vw, 3.4rem); }
     .welcome-actions .button { width: 100%; justify-content: center; }
+    .mobile-automata { display: block; grid-column: 1 / -1; min-width: 0; margin-top: .5rem; }
+    .mobile-automata-heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: .75rem; }
+    .mobile-automata-heading h3 { margin: .15rem 0 0; font-size: 1.35rem; font-weight: 750; letter-spacing: -.035em; }
+    .automata-card-grid { display: grid; gap: .85rem; }
+    .automaton-card { overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgb(28 49 87 / 8%); }
+    .automaton-card-main { display: flex; align-items: center; gap: .85rem; width: 100%; min-width: 0; padding: 1rem; color: var(--ink); text-align: left; background: transparent; border: 0; cursor: pointer; }
+    .automaton-card-main:active { background: #f5f8ff; }
+    .automaton-card-main:disabled { cursor: wait; opacity: .65; }
+    .automaton-card-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: none; color: var(--primary); background: #eaf1ff; border-radius: 12px; }
+    .automaton-card-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .automaton-card-copy strong { overflow: hidden; font-size: 1rem; text-overflow: ellipsis; white-space: nowrap; }
+    .automaton-card-copy small { margin-top: .2rem; color: var(--muted); }
+    .automaton-card-chevron { flex: none; color: #9aa5b7; font-size: .75rem; }
+    .automaton-card-actions { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #edf1f7; }
+    .automaton-card-actions button { display: flex; align-items: center; justify-content: center; gap: .35rem; min-width: 0; min-height: 44px; padding: .55rem .25rem; color: #526078; font-size: .68rem; font-weight: 700; background: #fbfcfe; border: 0; border-right: 1px solid #edf1f7; cursor: pointer; }
+    .automaton-card-actions button:last-child { border-right: 0; }
+    .automaton-card-actions button:active { background: #edf3ff; }
+    .automaton-card-actions button:disabled { color: #abb3c0; cursor: not-allowed; }
+    .automaton-card-actions button.is-danger { color: #cc3151; }
     .quick-grid { margin-top: 1rem; }
     .app-footer { flex-direction: column; text-align: center; }
 }
