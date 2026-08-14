@@ -302,6 +302,40 @@
                         <span class="node node-b">q1</span><span class="connector connector-b"></span>
                         <span class="node node-c">q2</span>
                     </div>
+                    @if (automata.Count > 0)
+                    {
+                        <section class="mobile-automata" aria-labelledby="mobile-automata-title">
+                            <div class="mobile-automata-heading">
+                                <div>
+                                    <span class="eyebrow">Workspace</span>
+                                    <h3 id="mobile-automata-title">Your automata</h3>
+                                </div>
+                                <span class="item-count">@automata.Count</span>
+                            </div>
+                            <div class="automata-card-grid">
+                                @foreach (var G in automata)
+                                {
+                                    <article class="automaton-card">
+                                        <button class="automaton-card-main" type="button" @onclick="() => ShowAutomaton(G.Value)"
+                                                disabled="@renderingAutomaton" aria-label="Show automaton @G.Key">
+                                            <span class="automaton-card-icon"><i class="fas fa-project-diagram"></i></span>
+                                            <span class="automaton-card-copy">
+                                                <strong title="@G.Key">@G.Key</strong>
+                                                <small>@G.Value.States.Count() states · @G.Value.Events.Count() events</small>
+                                            </span>
+                                            <i class="fas fa-chevron-right automaton-card-chevron" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="automaton-card-actions" aria-label="Actions for @G.Key">
+                                            <button type="button" @onclick="() => SummaryAutomaton(G.Value)" title="Summary"><i class="fas fa-list"></i><span>Summary</span></button>
+                                            <button type="button" @onclick="() => OpenVisualLayout(G.Value)" disabled="@(!CanOpenVisualLayout(G.Value))" title="@VisualLayoutTitle(G.Value)"><i class="fas fa-edit"></i><span>Layout</span></button>
+                                            <button type="button" @onclick="() => SaveAutomaton(G.Value)" title="Download"><i class="fas fa-download"></i><span>Save</span></button>
+                                            <button type="button" class="is-danger" @onclick="() => RemoveAutomaton(G.Key)" title="Delete"><i class="fas fa-trash"></i><span>Delete</span></button>
+                                        </div>
+                                    </article>
+                                }
+                            </div>
+                        </section>
+                    }
                     <div class="quick-grid">
                         <button @onclick="ev => page = Page.CreateState"><i class="far fa-circle"></i><span><strong>Create state</strong><small>Add marked or unmarked states</small></span></button>
                         <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
