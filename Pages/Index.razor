@@ -26,7 +26,7 @@
                     <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
                     <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
-                    <a @onclick="ev => page = Page.PetriNets" class="is-mobile dropdown-item">Petri Net</a>
+                    <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                 </div>
             </div>
         </div>
@@ -40,7 +40,7 @@
                     <a @onclick="ev => page = Page.UnaryOperations" class="is-mobile dropdown-item">Apply Unary Operation</a>
                     <a @onclick="ev => page = Page.BinaryOperations" class="is-mobile dropdown-item">Apply Binary Operation</a>
                     <a @onclick="ev => page = Page.CreateSupervisor" class="is-mobile dropdown-item">Supervisor Synthesis</a>
-                    <a @onclick="ev => page = Page.PetriNets" class="is-mobile dropdown-item">Petri-net Studio</a>
+                    <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod" @onchange="@(() => LoadWmodAutomaton("loadwmod"))"><a>Upload Wmod Automaton</a></label>
@@ -72,14 +72,14 @@
                     <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
                     <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
-                    <a @onclick="ev => page = Page.PetriNets" class="is-mobile dropdown-item">Petri Net</a>
+                    <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Operations</p>
                     <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
                     <a @onclick="ev => page = Page.UnaryOperations" class="is-mobile dropdown-item">Apply Unary Operation</a>
                     <a @onclick="ev => page = Page.BinaryOperations" class="is-mobile dropdown-item">Apply Binary Operation</a>
                     <a @onclick="ev => page = Page.CreateSupervisor" class="is-mobile dropdown-item">Supervisor Synthesis</a>
-                    <a @onclick="ev => page = Page.PetriNets" class="is-mobile dropdown-item">Petri-net Studio</a>
+                    <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Import</p>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson_m" @onchange="@(() => LoadJsonAutomaton("loadjson_m"))"><a>Upload Json Automaton</a></label>
@@ -289,9 +289,6 @@
             case Page.ExportWmod:
                 <Modal Title="Export Wmod" OnClose="@Clear"><ExportWmod Automata="automata" OnSuccess="@Clear" OnCancel="@Clear"></ExportWmod></Modal>
                 break;
-            case Page.PetriNets:
-                <PetriNetStudio OnCancel="Clear" />
-                break;
             case Page.Empty:
             default:
                 <div class="welcome-panel">
@@ -384,7 +381,6 @@
         BinaryOperations,
         UnaryOperations,
         ExportWmod
-        ,PetriNets
     }
 
     private readonly Dictionary<string, AbstractState> states = new Dictionary<string, AbstractState>();
