@@ -1,0 +1,114 @@
+@using System.Text.Json
+@using PNMarking = UltraDES.PetriNets.Marking
+@using PNTransition = UltraDES.PetriNets.Transition
+@inject IJSRuntime JSRuntime
+
+<div class="petri-studio">
+    <header class="petri-header">
+        <div><span class="eyebrow">UltraDES.PetriNets</span><h2>Petri-net workspace</h2><p>Build, inspect, analyze and simulate weighted place/transition nets.</p></div>
+        <button class="button is-light" type="button" @onclick="OnCancel">Back to automata</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(error)) { <div class="notification is-danger" role="alert">@error</div> }
+
+    <div class="petri-layout">
+        <aside class="petri-list">
+            <button class="button is-primary is-fullwidth" @onclick="NewDraft"><i class="fas fa-plus"></i>&nbsp; New net</button>
+            @foreach (var item in nets)
+            {
+                <button class="petri-net-item @(selected == item ? "is-selected" : "")" @onclick="() => Select(item)">
+                    <i class="fas fa-project-diagram"></i><span><strong>@item.Name</strong><small>@item.Places.Length places · @item.Transitions.Length transitions</small></span>
+                </button>
+            }
+        </aside>
+
+        <section class="petri-panel">
+            @if (editing) { @Editor() }
+            else if (selected is not null) { @Details() }
+            else { <div class="petri-empty"><i class="fas fa-network-wired"></i><h3>Create your first Petri net</h3><p>Define nodes, weighted arcs and an initial marking.</p></div> }
+        </section>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private const string StorageKey = "ultrades.petrinets.v1";
+    private readonly List<PetriNetDraft> nets = [];
+    private PetriNetDraft selected;
+    private bool editing;
+    private string name = "";
+    private string placeText = "free, busy";
+    private string transitionText = "enter, leave";
+    private readonly List<ArcRow> arcRows = [];
+    private readonly Dictionary<string, uint> tokens = [];
+    private PNMarking currentMarking;
+    private readonly List<string> firingHistory = [];
+    private string error = "";
+    private string svg = "";
+    private string analysis = "";
+    private string combineWith = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", StorageKey);
+            if (!string.IsNullOrWhiteSpace(json)) nets.AddRange(JsonSerializer.Deserialize<List<PetriNetDraft>>(json) ?? []);
+        }
+        catch (Exception ex) { error = $"The saved Petri-net workspace could not be loaded: {ex.Message}"; }
+        StateHasChanged();
+    }
+
+    private RenderFragment Editor() => @<div>
+        <div class="level"><div><span class="eyebrow">Construction</span><h3>@(selected is null ? "New Petri net" : $"Edit {selected.Name}")</h3></div></div>
+        <div class="field"><label class="label">Name</label><input class="input" @bind="name" placeholder="Resource" /></div>
+        <div class="columns"><div class="column"><label class="label">Places <small>(comma-separated)</small></label><input class="input" @bind="placeText" @bind:event="oninput" /></div>
+        <div class="column"><label class="label">Transitions <small>(comma-separated)</small></label><input class="input" @bind="transitionText" @bind:event="oninput" /></div></div>
+        <h4 class="title is-6">Weighted arcs</h4>
+        @foreach (var row in arcRows) { <div class="petri-row"><input class="input" @bind="row.Origin" placeholder="Origin"/><span>→</span><input class="input" @bind="row.Destination" placeholder="Destination"/><input class="input weight" type="number" min="1" @bind="row.Weight"/><button class="button is-danger is-light" @onclick="() => arcRows.Remove(row)"><i class="fas fa-trash"></i></button></div> }
+        <button class="button is-small is-light" @onclick="() => arcRows.Add(new())">Add arc</button>
+        <h4 class="title is-6 mt-5">Initial marking</h4>
+        <div class="marking-editor">@foreach (var place in Names(placeText)) { <label><span>@place</span><input class="input" type="number" min="0" value="@tokens.GetValueOrDefault(place)" @onchange="e => SetToken(place, e.Value?.ToString())" /></label> }</div>
+        <div class="buttons mt-5"><button class="button is-success" @onclick="Save">Save net</button><button class="button" @onclick="CancelEdit">Cancel</button></div>
+    </div>;
+
+    private RenderFragment Details() => @<div>
+        <div class="level"><div><span class="eyebrow">Petri net</span><h3>@selected!.Name</h3></div><div class="buttons"><button class="button is-light" @onclick="Edit">Edit</button><button class="button is-danger is-light" @onclick="Delete">Delete</button></div></div>
+        <div class="tabs is-boxed"><ul><li><a @onclick="ShowDrawing">Drawing</a></li><li><a @onclick="ShowStructure">Structure</a></li><li><a @onclick="ShowCoverability">Coverability graph</a></li><li><a @onclick="StartSimulation">Simulation</a></li></ul></div>
+        @if (!string.IsNullOrWhiteSpace(svg)) { <div class="petri-drawing">@((MarkupString)svg)</div> }
+        @if (!string.IsNullOrWhiteSpace(analysis)) { <div class="content petri-analysis">@((MarkupString)analysis)</div> }
+        @if (currentMarking is not null) { @Simulation() }
+        <hr/><div class="field is-grouped"><div class="control is-expanded"><div class="select is-fullwidth"><select @bind="combineWith"><option value="">Combine with…</option>@foreach (var net in nets.Where(n => n != selected)) { <option value="@net.Name">@net.Name</option> }</select></div></div><button class="button" @onclick="Combine" disabled="@(string.IsNullOrWhiteSpace(combineWith))">Combine (+)</button></div>
+    </div>;
+
+    private RenderFragment Simulation() => @<div class="simulation"><span class="eyebrow">Interactive simulation</span><h4>Current marking</h4><div class="marking-chips">@foreach (var value in currentMarking!.Values.OrderBy(v => v.Item1.ToString())) { <span><strong>@value.Item1</strong> = @(value.Item2?.ToString() ?? "ω")</span> }</div><h4>Enabled transitions</h4><div class="buttons">@foreach (var transition in Built().Net.EnabledTransitions(currentMarking)) { <button class="button is-primary" @onclick="() => Fire(transition)"><i class="fas fa-play"></i>&nbsp; Fire @transition</button> } @if (!Built().Net.EnabledTransitions(currentMarking).Any()) { <span class="tag is-warning">Deadlock: no transition is enabled</span> }</div>@if (firingHistory.Count > 0) { <p><strong>Firing sequence:</strong> @string.Join(" → ", firingHistory)</p> }<button class="button is-small is-light" @onclick="StartSimulation">Reset marking</button></div>;
+
+    private void NewDraft() { selected = null; name = ""; placeText = "free, busy"; transitionText = "enter, leave"; arcRows.Clear(); arcRows.AddRange([new("free","enter",1),new("enter","busy",1),new("busy","leave",1),new("leave","free",1)]); tokens.Clear(); tokens["free"] = 1; editing = true; ResetViews(); }
+    private void Select(PetriNetDraft item) { selected = item; editing = false; error = ""; ResetViews(); }
+    private void Edit() { name=selected!.Name; placeText=string.Join(", ",selected.Places); transitionText=string.Join(", ",selected.Transitions); arcRows.Clear(); arcRows.AddRange(selected.Arcs.Select(a=>new ArcRow(a.Origin,a.Destination,a.Weight))); tokens.Clear(); foreach(var pair in selected.InitialMarking) tokens[pair.Key]=pair.Value; editing=true; ResetViews(); }
+    private void CancelEdit() { editing=false; if(selected is null) ResetViews(); }
+    private void SetToken(string place, string value) => tokens[place] = uint.TryParse(value, out var count) ? count : 0;
+    private async Task Save() { try { var draft=Draft(); PetriNetWorkspace.Build(draft); if(nets.Any(net => net != selected && string.Equals(net.Name, draft.Name, StringComparison.Ordinal))) throw new InvalidOperationException($"A Petri net named '{draft.Name}' already exists."); if(selected is not null) nets.Remove(selected); nets.Add(draft); selected=draft; editing=false; error=""; await Persist(); StartSimulation(); } catch(Exception ex) { error=ex.Message; } }
+    private async Task Delete() { if(selected is null || !await JSRuntime.InvokeAsync<bool>("confirm", $"Delete Petri net {selected.Name}?")) return; nets.Remove(selected); selected=null; ResetViews(); await Persist(); }
+    private PetriNetDraft Draft() => new(name.Trim(), Names(placeText), Names(transitionText), arcRows.Select(a=>new PetriArcDraft(a.Origin.Trim(),a.Destination.Trim(),a.Weight)).ToArray(), Names(placeText).ToDictionary(p=>p,p=>tokens.GetValueOrDefault(p)));
+    private (UltraDES.PetriNets.PetriNet Net, PNMarking Marking) Built() => PetriNetWorkspace.Build(selected!);
+    private static string[] Names(string value) => value.Split(',', StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+    private async Task Persist() => await JSRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, JsonSerializer.Serialize(nets));
+    private void ResetViews() { svg=""; analysis=""; currentMarking=null; firingHistory.Clear(); }
+    private async Task ShowDrawing() { try { ResetViews(); var built=Built(); svg=await JSRuntime.InvokeAsync<string>("GraphViz",built.Net.ToDotCode(built.Marking)); } catch(Exception ex){error=ex.Message;} }
+    private void ShowStructure() { try { ResetViews(); var (net,_)=Built(); var matrix=net.IncidenceMatrix(out var pi,out var ti); var places=pi.OrderBy(x=>x.Value).Select(x=>x.Key).ToArray(); var transitions=ti.OrderBy(x=>x.Value).Select(x=>x.Key).ToArray(); analysis = BuildMatrixHtml(net, matrix, pi, ti, places, transitions); } catch(Exception ex){error=ex.Message;} }
+    private async Task ShowCoverability() { try { ResetViews(); var (net,m)=Built(); var edges=net.CoverabilityGraph(m).ToArray(); var dot="digraph G { rankdir=LR; node [shape=box]; "+string.Join(" ",edges.Select((e,i)=>$"\"{e.Item1}\" -> \"{e.Item3}\" [label=\"{e.Item2}\"];"))+"}"; svg=await JSRuntime.InvokeAsync<string>("GraphViz",dot); analysis=$"<p><strong>{edges.Length}</strong> coverability edges. Equivalent markings are merged and ω denotes unbounded growth.</p>"; } catch(Exception ex){error=ex.Message;} }
+    private void StartSimulation() { try { ResetViews(); currentMarking=Built().Marking; } catch(Exception ex){error=ex.Message;} }
+    private void Fire(PNTransition transition) { currentMarking=Built().Net.Fire(currentMarking!,transition); firingHistory.Add(transition.ToString()); }
+    private async Task Combine() { try { var other=nets.First(n=>n.Name==combineWith); var combined=PetriNetWorkspace.Combine(selected!,other,$"{selected!.Name}+{other.Name}"); if(nets.Any(n=>n.Name==combined.Name)) throw new InvalidOperationException("A combined net with this name already exists."); PetriNetWorkspace.Build(combined); nets.Add(combined); selected=combined; combineWith=""; await Persist(); StartSimulation(); } catch(Exception ex){error=ex.Message;} }
+
+    private static string BuildMatrixHtml(UltraDES.PetriNets.PetriNet net, int[,] matrix, Dictionary<UltraDES.PetriNets.Place,int> pi, Dictionary<PNTransition,int> ti, UltraDES.PetriNets.Place[] places, PNTransition[] transitions)
+    {
+        const char Left = '<', Right = '>';
+        var header = string.Concat(transitions.Select(t => $"{Left}th{Right}{t}{Left}/th{Right}"));
+        var rows = string.Concat(places.Select(p => $"{Left}tr{Right}{Left}th{Right}{p}{Left}/th{Right}" + string.Concat(transitions.Select(t => $"{Left}td{Right}{matrix[pi[p],ti[t]]}{Left}/td{Right}")) + $"{Left}/tr{Right}"));
+        return $"{Left}h4{Right}Incidence matrix (output − input){Left}/h4{Right}{Left}div class='table-container'{Right}{Left}table class='table is-bordered'{Right}{Left}thead{Right}{Left}tr{Right}{Left}th{Right}Place{Left}/th{Right}{header}{Left}/tr{Right}{Left}/thead{Right}{Left}tbody{Right}{rows}{Left}/tbody{Right}{Left}/table{Right}{Left}/div{Right}{Left}p{Right}{Left}strong{Right}All places form a siphon:{Left}/strong{Right} {net.IsSiphon(places)} · {Left}strong{Right}trap:{Left}/strong{Right} {net.IsTrap(places)}{Left}/p{Right}";
+    }
+    private sealed class ArcRow(string origin="", string destination="", uint weight=1) { public string Origin {get;set;}=origin; public string Destination {get;set;}=destination; public uint Weight {get;set;}=weight; }
+}
