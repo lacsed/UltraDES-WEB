@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "et/BENph",
+  "version": "eFhsGzZy",
   "assets": [
     {
       "hash": "sha256-2TjxESpVmds56/lt+i15CpSnti90CsOXLDFv4dTMPhw=",
@@ -10,11 +10,11 @@ self.assetsManifest = {
       "url": "UltraDES/img/logo_lacsed.png"
     },
     {
-      "hash": "sha256-CBloyb3omUGxk/cVucJn1ELOmuZiay0zAUS/FDZqeBw=",
+      "hash": "sha256-OPkXEWJUd2+EMTDP02cSl4Fl6PR/a0f//KURg3tqX9s=",
       "url": "UltraDESWeb.styles.css"
     },
     {
-      "hash": "sha256-Rb9yblpmy+ZN0SwAFPlMUAE2eLUHo5ifVqaaDhHAYmw=",
+      "hash": "sha256-Bb5KpaSwECPmF80mrYNMws12anOLHYDyng6nsitbqOY=",
       "url": "_framework/Microsoft.AspNetCore.Components.Web.wasm"
     },
     {
@@ -270,11 +270,11 @@ self.assetsManifest = {
       "url": "_framework/UltraDES.wasm"
     },
     {
-      "hash": "sha256-iYcNcTNXVpu93/aWEQTgs2yAsK6p4tBJ1EzSo3oAerQ=",
+      "hash": "sha256-MqoXyp3U5YgBVziiPaOK97ftzPn+of4cqN9FREf8ZAs=",
       "url": "_framework/UltraDESWeb.wasm"
     },
     {
-      "hash": "sha256-wJCCw4NXparmoGFbE8MaaY+w4Md/SCCP8+cneNawtJU=",
+      "hash": "sha256-XnUutZhklDC4lJ5VsDAWmVCFj7Kv1i8yMR/bfzoyLHM=",
       "url": "_framework/blazor.boot.json"
     },
     {

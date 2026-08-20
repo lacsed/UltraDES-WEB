@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-IPA4j0b6409BlfcqqVqF0S63ZnfmQZ12ShROSj2xQcQ=",
+    "hash": "sha256-YF9j2WApkiRCL89zci3HfTII/mEo0WrXgJG4w6fA3as=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-dexsp+9ih2C28zVhNnPXUbkz2QCq7lHpkyDcmaLl7NQ="
     },
@@ -19,7 +19,7 @@
     "coreAssembly": {},
     "assembly": {
       "Microsoft.AspNetCore.Components.wasm": "sha256-eSEFbkf/jFQMqSmkTim1+OUiTreYdo87FZWpB2KCFi0=",
-      "Microsoft.AspNetCore.Components.Web.wasm": "sha256-Rb9yblpmy+ZN0SwAFPlMUAE2eLUHo5ifVqaaDhHAYmw=",
+      "Microsoft.AspNetCore.Components.Web.wasm": "sha256-Bb5KpaSwECPmF80mrYNMws12anOLHYDyng6nsitbqOY=",
       "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-RUR57EDCq+i0veTAcwvYktAQ472ZYmpPMBb2CdIB8xs=",
       "Microsoft.Bcl.HashCode.wasm": "sha256-3OMNy/2VRU1BJsB1XSppo6yKKvhDQv3fcHDVi5jGv3k=",
       "Microsoft.Extensions.Configuration.wasm": "sha256-od574rRtVVRJj+24jbl8j3GdQFpxlJOpSx+pEMw1Q18=",
@@ -83,7 +83,7 @@
       "System.wasm": "sha256-0h/E837RjMJjMLndiTv3gCaXstmfreX9Ui/wJVYpzwg=",
       "netstandard.wasm": "sha256-/vG1Kx4XRccMPw26koFTx3xIUGxzP3AFmXJIdDkHC9Q=",
       "System.Private.CoreLib.wasm": "sha256-Ihu8F39bDu/iVqadrlWH72GDva7mrddrgrS/BUNCwr0=",
-      "UltraDESWeb.wasm": "sha256-iYcNcTNXVpu93/aWEQTgs2yAsK6p4tBJ1EzSo3oAerQ="
+      "UltraDESWeb.wasm": "sha256-MqoXyp3U5YgBVziiPaOK97ftzPn+of4cqN9FREf8ZAs="
     }
   },
   "cacheBootResources": true,
