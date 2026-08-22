@@ -7,7 +7,10 @@
 <div class="petri-workspace">
     <header class="petri-topbar">
         <a class="petri-brand" href="/"><img src="/UltraDES/img/logo.png" alt="UltraDES" /><span><strong>UltraDES</strong><small>Workspace de Redes de Petri</small></span></a>
-        <a class="button is-light" href="/"><i class="fas fa-arrow-left"></i>&nbsp; Autômatos</a>
+        <nav class="workspace-switcher" aria-label="Ambiente de modelagem">
+            <a href="/"><i class="fas fa-project-diagram"></i><span>Autômatos</span></a>
+            <a class="is-active" href="petri-nets" aria-current="page"><i class="fas fa-network-wired"></i><span>Redes de Petri</span></a>
+        </nav>
     </header>
 
     <main class="petri-shell">
@@ -15,11 +18,11 @@
             <div class="workspace-heading"><div><span class="eyebrow">Projeto atual</span><h1>Redes de Petri</h1></div><span class="workspace-total">@(places.Count + transitions.Count + nets.Count)</span></div>
             @Catalog("Lugares", "fa-circle", places, WorkspaceMode.Place)
             @Catalog("Transições", "fa-minus", transitions, WorkspaceMode.Transition)
-            <section class="catalog"><div class="catalog-title"><span>Redes</span><span class="item-count">@nets.Count</span><button @onclick="NewNet" title="Criar rede"><i class="fas fa-plus"></i></button></div>
+            <section class="catalog"><div class="catalog-title"><span>Redes</span><span class="item-count">@nets.Count</span><button @onclick="NewNet" title="Criar rede" aria-label="Criar rede"><i class="fas fa-plus"></i></button></div>
                 @if (nets.Count == 0) { <p class="catalog-empty">Nenhuma rede criada.</p> }
                 @foreach (var net in nets) { <button class="catalog-item @(selected == net ? "is-active" : "")" @onclick="() => Select(net)"><i class="fas fa-project-diagram"></i><span><strong>@net.Name</strong><small>@net.Places.Length lugares · @net.Transitions.Length transições</small></span></button> }
             </section>
-            <section class="catalog"><div class="catalog-title"><span>Marcações</span><span class="item-count">@markings.Count</span><button @onclick="NewMarking" disabled="@(nets.Count == 0)" title="Criar marcação"><i class="fas fa-plus"></i></button></div>
+            <section class="catalog"><div class="catalog-title"><span>Marcações</span><span class="item-count">@markings.Count</span><button @onclick="NewMarking" disabled="@(nets.Count == 0)" title="Criar marcação" aria-label="Criar marcação"><i class="fas fa-plus"></i></button></div>
                 @if (markings.Count == 0) { <p class="catalog-empty">Nenhuma marcação associada.</p> }
                 @foreach (var marking in markings) { <button class="catalog-item" @onclick="() => EditMarking(marking)"><i class="fas fa-coins"></i><span><strong>@marking.Name</strong><small>@marking.NetName</small></span></button> }
             </section>
@@ -31,7 +34,7 @@
             else if (mode == WorkspaceMode.Net) { @NetEditor() }
             else if (mode == WorkspaceMode.Marking) { @MarkingEditor() }
             else if (selected is not null) { @NetDetails() }
-            else { <div class="petri-welcome"><span class="welcome-icon"><i class="fas fa-network-wired"></i></span><span class="eyebrow">Fluxo de construção</span><h2>Modele sua rede passo a passo.</h2><p>Crie primeiro os lugares e as transições. Depois, selecione esses elementos e conecte-os com arcos para formar uma rede.</p><div class="steps"><span><b>1</b> Lugares</span><i class="fas fa-chevron-right"></i><span><b>2</b> Transições</span><i class="fas fa-chevron-right"></i><span><b>3</b> Rede e arcos</span><i class="fas fa-chevron-right"></i><span><b>4</b> Marcação</span></div></div> }
+            else { <div class="petri-welcome"><span class="welcome-icon"><i class="fas fa-network-wired"></i></span><span class="eyebrow">Fluxo de construção</span><h2>Modele sua rede passo a passo.</h2><p>Crie os elementos básicos, conecte-os com arcos e use marcações para analisar e simular o comportamento da rede.</p><div class="petri-welcome-actions"><button class="button is-primary" @onclick="() => BeginNode(WorkspaceMode.Place)"><i class="far fa-circle"></i><span>Criar primeiro lugar</span></button><button class="button is-light" @onclick="() => BeginNode(WorkspaceMode.Transition)"><i class="fas fa-minus"></i><span>Criar transição</span></button></div><div class="steps"><span><b>1</b> Lugares</span><i class="fas fa-chevron-right"></i><span><b>2</b> Transições</span><i class="fas fa-chevron-right"></i><span><b>3</b> Rede e arcos</span><i class="fas fa-chevron-right"></i><span><b>4</b> Marcação</span></div></div> }
         </section>
     </main>
 </div>
@@ -67,7 +70,7 @@
         StateHasChanged();
     }
 
-    private RenderFragment Catalog(string title, string icon, List<string> items, WorkspaceMode target) => @<section class="catalog"><div class="catalog-title"><span>@title</span><span class="item-count">@items.Count</span><button @onclick="() => BeginNode(target)" title="Criar @title.ToLowerInvariant()"><i class="fas fa-plus"></i></button></div>@if (items.Count == 0) { <p class="catalog-empty">Nenhum item criado.</p> }@foreach (var item in items) { <div class="catalog-item"><i class="far @icon"></i><span><strong>@item</strong></span><button class="delete is-small" title="Excluir" @onclick="() => DeleteNode(item, target)"></button></div>}</section>;
+    private RenderFragment Catalog(string title, string icon, List<string> items, WorkspaceMode target) => @<section class="catalog"><div class="catalog-title"><span>@title</span><span class="item-count">@items.Count</span><button @onclick="() => BeginNode(target)" title="Criar @title.ToLowerInvariant()" aria-label="Criar @title.ToLowerInvariant()"><i class="fas fa-plus"></i></button></div>@if (items.Count == 0) { <p class="catalog-empty">Nenhum item criado.</p> }@foreach (var item in items) { <div class="catalog-item"><i class="far @icon"></i><span><strong>@item</strong></span><button class="delete is-small" title="Excluir @item" aria-label="Excluir @item" @onclick="() => DeleteNode(item, target)"></button></div>}</section>;
 
     private RenderFragment NodeEditor() => @<div class="editor-card"><span class="eyebrow">Etapa @(mode == WorkspaceMode.Place ? "1" : "2")</span><h2>Criar @(mode == WorkspaceMode.Place ? "lugar" : "transição")</h2><p>Este elemento ficará disponível para ser usado em uma ou mais redes.</p><div class="field"><label class="label">Nome</label><input class="input" @bind="nodeName" @onkeyup="EnterNode" placeholder="Ex.: @(mode == WorkspaceMode.Place ? "Disponível" : "Iniciar")" /></div><div class="buttons"><button class="button is-primary" @onclick="SaveNode">Criar</button><button class="button" @onclick="CancelEditor">Cancelar</button></div></div>;
 

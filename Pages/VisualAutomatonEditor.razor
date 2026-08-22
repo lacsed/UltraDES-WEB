@@ -7,33 +7,49 @@
     @if (!LayoutOnly)
     {
     <div class="visual-editor-toolbar">
-        <div class="field">
+        <div>
+            <span class="eyebrow">Visual workspace</span>
+            <h3>Design the automaton</h3>
+        </div>
+        <div class="field visual-name-field">
             <label class="label" for="visual-automaton-name">Automaton name</label>
-            <input id="visual-automaton-name" class="input" @bind="automatonName" />
+            <input id="visual-automaton-name" class="input" @bind="automatonName" placeholder="e.g. Controller" />
         </div>
     </div>
     }
 
-    <p class="help visual-editor-help">
+    <div class="visual-editor-help">
+        <i class="fas fa-lightbulb" aria-hidden="true"></i>
+        <p>
         @if (LayoutOnly) { <text>Drag states and transitions to arrange the diagram. Use the mouse wheel to zoom and drag empty space to pan. Labels follow their transitions automatically. The automaton structure is read-only.</text> }
         else { <text>Double-click (or double-tap) empty space to add a state. Use “Add initial” or “Set initial” to define the initial state. Select a state or transition and type to edit it. Hold Shift and drag between states with a mouse; on touch, hold a state and drag to another. Right-click or touch and hold an item for more options.</text> }
-    </p>
+        </p>
+    </div>
 
     @if (!LayoutOnly)
     {
         <div class="visual-editor-actions" role="toolbar" aria-label="Automaton drawing tools">
-            <button class="button is-small" type="button" @onclick='() => SetTool("select")'>Select / move</button>
-            <button class="button is-small is-info" type="button" @onclick='() => SetTool("add-state")'>Add state</button>
-            <button class="button is-small is-info" type="button" @onclick='() => SetTool("add-initial")'>Add initial</button>
-            <button class="button is-small is-link" type="button" @onclick='() => SetTool("transition")'>Add transition</button>
-            <button class="button is-small" type="button" @onclick="EditSelection">Edit text</button>
-            <button class="button is-small" type="button" @onclick="ToggleMarked">Toggle marked</button>
-            <button class="button is-small" type="button" @onclick="SetInitial">Set initial</button>
-            <button class="button is-small" type="button" @onclick="ToggleControllable">Toggle event</button>
-            <button class="button is-small is-danger" type="button" @onclick="DeleteSelection">Delete</button>
+            <div class="visual-tool-group">
+                <span class="visual-tool-label">Draw</span>
+                <button class="visual-tool @(activeTool == "select" ? "is-active" : "")" type="button" @onclick='() => SetTool("select")' title="Select or move"><i class="fas fa-mouse-pointer"></i><span>Select</span></button>
+                <button class="visual-tool @(activeTool == "add-state" ? "is-active" : "")" type="button" @onclick='() => SetTool("add-state")' title="Add state"><i class="far fa-circle"></i><span>State</span></button>
+                <button class="visual-tool @(activeTool == "add-initial" ? "is-active" : "")" type="button" @onclick='() => SetTool("add-initial")' title="Add initial state"><i class="fas fa-bullseye"></i><span>Initial</span></button>
+                <button class="visual-tool @(activeTool == "transition" ? "is-active" : "")" type="button" @onclick='() => SetTool("transition")' title="Add transition"><i class="fas fa-long-arrow-alt-right"></i><span>Transition</span></button>
+            </div>
+            <div class="visual-tool-group">
+                <span class="visual-tool-label">Selection</span>
+                <button class="visual-tool" type="button" @onclick="EditSelection" title="Edit selected label"><i class="fas fa-pen"></i><span>Edit</span></button>
+                <button class="visual-tool" type="button" @onclick="ToggleMarked" title="Toggle marked state"><i class="far fa-dot-circle"></i><span>Marked</span></button>
+                <button class="visual-tool" type="button" @onclick="SetInitial" title="Set initial state"><i class="fas fa-play"></i><span>Set initial</span></button>
+                <button class="visual-tool" type="button" @onclick="ToggleControllable" title="Toggle event controllability"><i class="fas fa-exchange-alt"></i><span>Event type</span></button>
+                <button class="visual-tool is-danger" type="button" @onclick="DeleteSelection" title="Delete selection"><i class="fas fa-trash"></i><span>Delete</span></button>
+            </div>
         </div>
     }
-    <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
+    <div class="visual-canvas-shell">
+        <div class="visual-canvas-header"><span><i class="fas fa-project-diagram"></i> Diagram</span><small>@(LayoutOnly ? "Scroll to zoom · drag to pan" : "Double-click empty space to add a state")</small></div>
+        <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
+    </div>
     @if (errors.Count > 0)
     {
         <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
@@ -68,6 +84,7 @@
     private IJSObjectReference module;
     private IJSObjectReference editor;
     private string automatonName = "";
+    private string activeTool = "select";
     private readonly List<string> errors = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -102,6 +119,7 @@
     private Task ExportTikz() => InvokeEditor("exportTikz");
     private async Task SetTool(string tool)
     {
+        activeTool = tool;
         if (editor is not null) await editor.InvokeVoidAsync("setTool", tool);
     }
 

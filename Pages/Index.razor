@@ -16,6 +16,10 @@
         </button>
     </div>
     <div class="navbar-end app-navigation">
+        <div class="workspace-switcher is-hidden-mobile" role="group" aria-label="Modeling workspace">
+            <a class="is-active" href="/" aria-current="page"><i class="fas fa-project-diagram"></i><span>Automata</span></a>
+            <a href="petri-nets"><i class="fas fa-network-wired"></i><span>Petri nets</span></a>
+        </div>
         <div class="dropdown is-hoverable is-hidden-mobile">
             <button class="button" aria-haspopup="true" aria-controls="create">
                 <span>Create <i class="fas fa-angle-down"></i></span>
@@ -344,6 +348,7 @@
                         <button @onclick="ev => page = Page.CreateState"><i class="far fa-circle"></i><span><strong>Create state</strong><small>Add marked or unmarked states</small></span></button>
                         <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
                         <button @onclick="LoadSmallFactory"><i class="fas fa-industry"></i><span><strong>Try an example</strong><small>Load the Small Factory</small></span></button>
+                        <a href="petri-nets"><i class="fas fa-network-wired"></i><span><strong>Petri-net studio</strong><small>Model places, transitions and markings</small></span></a>
                     </div>
                 </div>
                 break;
