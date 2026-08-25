@@ -14,6 +14,13 @@ public sealed record PetriArcDraft(string Origin, string Destination, uint Weigh
 /// <summary>Creates UltraDES objects from the browser-friendly Petri-net representation.</summary>
 public static class PetriNetWorkspace
 {
+    /// <summary>Splits a comma-separated list of node names, trimming and de-duplicating entries.</summary>
+    public static string[] ParseNames(string value) => (value ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.Ordinal)
+        .ToArray();
+
     public static (PetriNet Net, Marking Marking) Build(PetriNetDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);

@@ -6,6 +6,13 @@ namespace UltraDESWeb.Tests;
 public sealed class PetriNetWorkspaceTests
 {
     [Fact]
+    public void ParseNames_supports_comma_separated_batch_creation()
+    {
+        Assert.Equal(["idle", "working", "done"],
+            PetriNetWorkspace.ParseNames(" idle, working,done, idle, "));
+    }
+
+    [Fact]
     public void Build_creates_weighted_net_and_initial_marking()
     {
         var draft = ResourceNet("Resource");
