@@ -134,6 +134,7 @@
 
 @code {
     [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
+    [Parameter] public string InitialAutomatonName { get; set; } = "";
     [Parameter, EditorRequired] public EventCallback<DeterministicFiniteAutomaton> OnAutomatonCreated { get; set; }
     [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
 
@@ -154,9 +155,12 @@
     protected override void OnParametersSet()
     {
         if (initialized || Automata.Count == 0) return;
-        primary = Automata.Keys.First();
-        secondary = Automata.Keys.Skip(1).FirstOrDefault() ?? "";
-        selectedAutomata.UnionWith(Automata.Keys.Take(2));
+        primary = !string.IsNullOrWhiteSpace(InitialAutomatonName) && Automata.ContainsKey(InitialAutomatonName)
+            ? InitialAutomatonName
+            : Automata.Keys.First();
+        secondary = Automata.Keys.FirstOrDefault(name => name != primary) ?? "";
+        selectedAutomata.Add(primary);
+        if (!string.IsNullOrWhiteSpace(secondary)) selectedAutomata.Add(secondary);
         initialized = true;
         PrimaryChanged();
     }

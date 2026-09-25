@@ -195,58 +195,15 @@
             {
                 @foreach (var G in automata)
                 {
-                    <li class="level is-mobile">
-
-                        <div class="dropdown is-hoverable" style="width: 100%">
-                            <div aria-haspopup="true" aria-controls="@(G.Key)" style="width: 100%">
-                                <div class="level is-mobile">
-                                    <div class="level-left" title="@(G.Key)"><span>Aut. @(G.Key.MaxLength(20))</span></div>
-                                    <div class="level-right"><span><i class="fas fa-angle-down"></i></span></div>
-                                </div>
-                            </div>
-
-                            <div class="dropdown-menu" id="@(G.Key)">
-                                <div class="dropdown-content">
-                                    <a @onclick="() => SummaryAutomaton(G.Value)">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Summary</span></div>
-                                            <div class="level-right"><span><i class="fas fa-list has-text-black"></i></span></div>
-                                        </div>
-                                    </a>
-                                    <a @onclick="() => ShowAutomaton(G.Value)" aria-disabled="@renderingAutomaton">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Show</span></div>
-                                            <div class="level-right"><span><i class="fas fa-project-diagram has-text-info"></i></span></div>
-                                        </div>
-                                    </a>
-                                    <a @onclick="() => OpenVisualLayout(G.Value)" class="@(CanOpenVisualLayout(G.Value) ? "" : "has-text-grey")"
-                                       aria-disabled="@(!CanOpenVisualLayout(G.Value))" title="@VisualLayoutTitle(G.Value)">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Open Visual Layout</span></div>
-                                            <div class="level-right"><span><i class="fas fa-edit has-text-info"></i></span></div>
-                                        </div>
-                                    </a>
-                                    <a @onclick="() => VerifyOpacityAutomaton(G.Value)">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Opacity/Diagnostic</span></div>
-                                            <div class="level-right"><span><i class="fas fa-eye-slash has-text-info"></i></span></div>
-                                        </div>
-                                    </a>
-                                    <a @onclick="() => SaveAutomaton(G.Value)">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Download</span></div>
-                                            <div class="level-right"><span><i class="fas fa-save has-text-info"></i></span></div>
-                                        </div>
-                                    </a>
-                                    <a @onclick="() => RemoveAutomaton(G.Key)">
-                                        <div class="level is-mobile">
-                                            <div class="level-left"><span>Delete</span></div>
-                                            <div class="level-right"><span><i class="fas fa-trash has-text-danger"></i></span></div>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                    <li>
+                        <button type="button" class="automaton-catalog-item @(selectedAutomatonName == G.Key ? "is-active" : "")"
+                                @onclick="() => SelectAutomaton(G.Key)" aria-pressed="@(selectedAutomatonName == G.Key ? "true" : "false")">
+                            <i class="fas fa-project-diagram" aria-hidden="true"></i>
+                            <span>
+                                <strong title="@G.Key">@G.Key</strong>
+                                <small>@G.Value.States.Count() states · @G.Value.Events.Count() events</small>
+                            </span>
+                        </button>
                     </li>
                 }
             }
@@ -297,13 +254,62 @@
                 <Modal Title="Apply an unary Operation" OnClose="@Clear"><ApplyUnaryOperation Automata="automata" OnSuccess="G => AddAutomaton(new[]{G}) " OnCancel="@Clear"></ApplyUnaryOperation></Modal>
                 break;
             case Page.AdvancedOperations:
-                <Modal Title="Advanced Analysis" OnClose="@Clear"><AdvancedOperations Automata="automata" OnAutomatonCreated="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
+                <Modal Title="Advanced Analysis" OnClose="@Clear"><AdvancedOperations Automata="automata" InitialAutomatonName="@selectedAutomatonName" OnAutomatonCreated="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
                 break;
             case Page.ExportWmod:
                 <Modal Title="Export Wmod" OnClose="@Clear"><ExportWmod Automata="automata" OnSuccess="@Clear" OnCancel="@Clear"></ExportWmod></Modal>
                 break;
             case Page.Empty:
             default:
+                @if (SelectedAutomaton is not null)
+                {
+                    var selected = SelectedAutomaton;
+                    <article class="selected-automaton-card" aria-labelledby="selected-automaton-title">
+                        <header class="selected-automaton-head">
+                            <div>
+                                <span class="eyebrow">Selected automaton</span>
+                                <h2 id="selected-automaton-title">@selected.Name</h2>
+                                <p>@selected.States.Count() states · @selected.Events.Count() events · @selected.Transitions.Count() transitions</p>
+                            </div>
+                            <div class="buttons">
+                                <button type="button" class="button" @onclick="() => DeselectAutomaton()">
+                                    <i class="fas fa-arrow-left" aria-hidden="true"></i><span>All automata</span>
+                                </button>
+                                <button type="button" class="button is-danger is-light" @onclick="() => RemoveAutomaton(selected.Name)" aria-label="Delete selected automaton">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </header>
+                        <div class="automaton-action-grid">
+                            <button type="button" @onclick="() => ShowAutomaton(selected)" disabled="@renderingAutomaton">
+                                <i class="fas fa-project-diagram" aria-hidden="true"></i>
+                                <span><strong>Show automaton</strong><small>Render the state-transition graph</small></span>
+                            </button>
+                            <button type="button" @onclick="() => OpenVisualLayout(selected)" disabled="@(!CanOpenVisualLayout(selected))" title="@VisualLayoutTitle(selected)">
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                                <span><strong>Visual layout</strong><small>Open or arrange the visual model</small></span>
+                            </button>
+                            <button type="button" @onclick="() => SummaryAutomaton(selected)">
+                                <i class="fas fa-list" aria-hidden="true"></i>
+                                <span><strong>Summary</strong><small>Inspect states, events and transitions</small></span>
+                            </button>
+                            <button type="button" @onclick="() => VerifyOpacityAutomaton(selected)">
+                                <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                                <span><strong>Opacity and diagnosis</strong><small>Run security and diagnosability checks</small></span>
+                            </button>
+                            <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)">
+                                <i class="fas fa-flask" aria-hidden="true"></i>
+                                <span><strong>Advanced analysis</strong><small>Projection, regex, conflict and more</small></span>
+                            </button>
+                            <button type="button" @onclick="() => SaveAutomaton(selected)">
+                                <i class="fas fa-download" aria-hidden="true"></i>
+                                <span><strong>Download</strong><small>Save this automaton as JSON</small></span>
+                            </button>
+                        </div>
+                    </article>
+                }
+                else
+                {
                 <div class="welcome-panel">
                     <div class="welcome-copy">
                         <span class="eyebrow">Model, analyze and control</span>
@@ -332,9 +338,9 @@
                             <div class="automata-card-grid">
                                 @foreach (var G in automata)
                                 {
-                                    <article class="automaton-card">
-                                        <button class="automaton-card-main" type="button" @onclick="() => ShowAutomaton(G.Value)"
-                                                disabled="@renderingAutomaton" aria-label="Show automaton @G.Key">
+                                    <article class="automaton-card @(selectedAutomatonName == G.Key ? "is-active" : "")">
+                                        <button class="automaton-card-main" type="button" @onclick="() => SelectAutomaton(G.Key)"
+                                                aria-label="Select automaton @G.Key" aria-pressed="@(selectedAutomatonName == G.Key ? "true" : "false")">
                                             <span class="automaton-card-icon"><i class="fas fa-project-diagram"></i></span>
                                             <span class="automaton-card-copy">
                                                 <strong title="@G.Key">@G.Key</strong>
@@ -361,6 +367,7 @@
                         <a href="petri-nets"><i class="fas fa-network-wired"></i><span><strong>Petri-net studio</strong><small>Model places, transitions and markings</small></span></a>
                     </div>
                 </div>
+                }
                 break;
         }
     </section>
@@ -406,6 +413,7 @@
     private readonly Dictionary<string, AutomatonLayoutData> layouts = new();
     private Page page = Page.Empty;
     private DeterministicFiniteAutomaton automaton = null;
+    private string selectedAutomatonName;
     private AutomatonLayoutData activeLayout;
     private bool ShowStates = false;
     private bool ShowEvents = false;
@@ -422,6 +430,11 @@
     private bool mobileMenuOpen;
     private string layoutProgress = "";
     private CancellationTokenSource layoutCancellation;
+
+    private DeterministicFiniteAutomaton SelectedAutomaton =>
+        !string.IsNullOrWhiteSpace(selectedAutomatonName) && automata.TryGetValue(selectedAutomatonName, out var selected)
+            ? selected
+            : null;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -540,7 +553,11 @@
             automata.Add(G.Name, G);
             automatonIds[G.Name] = Guid.NewGuid().ToString("N");
         }
-        if (closeEditor) page = Page.Empty;
+        if (closeEditor)
+        {
+            selectedAutomatonName = additions.LastOrDefault()?.Name;
+            page = Page.Empty;
+        }
         PersistWorkspace();
         StateHasChanged();
         return true;
@@ -558,8 +575,23 @@
         if (!await JsRuntime.Confirm($"Delete Automaton {aut}?")) return;
         automata.Remove(aut);
         if (automatonIds.Remove(aut, out var id)) layouts.Remove(id);
+        if (selectedAutomatonName == aut) selectedAutomatonName = null;
         PersistWorkspace();
         StateHasChanged();
+    }
+
+    private void SelectAutomaton(string name)
+    {
+        if (!automata.ContainsKey(name)) return;
+        selectedAutomatonName = name;
+        page = Page.Empty;
+        mobileMenuOpen = false;
+    }
+
+    private void DeselectAutomaton()
+    {
+        selectedAutomatonName = null;
+        page = Page.Empty;
     }
 
     private void ShowAutomaton(DeterministicFiniteAutomaton G)

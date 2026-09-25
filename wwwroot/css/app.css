@@ -88,6 +88,13 @@ footer {
 .workspace-sidebar .menu-list li { padding: .65rem .6rem; color: #354159; border-bottom: 1px solid #eef1f6; }
 .workspace-sidebar .menu-list .dropdown { min-width: 0; }
 .workspace-sidebar .menu-list a { cursor: pointer; }
+.automaton-catalog-item { display: flex; width: 100%; min-width: 0; align-items: center; gap: .65rem; padding: .55rem; color: #354159; text-align: left; background: transparent; border: 0; border-radius: 9px; cursor: pointer; }
+.automaton-catalog-item:hover { color: var(--primary-dark); background: #f6f8fc; }
+.automaton-catalog-item > i { width: 20px; flex: none; color: var(--primary); text-align: center; }
+.automaton-catalog-item > span { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.automaton-catalog-item strong, .automaton-catalog-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.automaton-catalog-item small { margin-top: .15rem; color: var(--muted); font-size: .7rem; }
+.automaton-catalog-item.is-active { color: var(--primary-dark); background: #eef5ff; box-shadow: inset 3px 0 var(--primary); }
 .workspace-content { min-width: 0; padding: clamp(1.25rem, 4vw, 4rem); overflow: auto; }
 
 .welcome-panel { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; width: 100%; max-width: 1240px; min-height: 100%; margin: auto; }
@@ -109,6 +116,20 @@ footer {
 .quick-grid i { display: grid; place-items: center; width: 40px; height: 40px; flex: none; color: var(--primary); background: #eaf1ff; border-radius: 10px; }
 .quick-grid span { display: flex; min-width: 0; flex-direction: column; }.quick-grid strong { font-size: .9rem; }.quick-grid small { margin-top: .2rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mobile-automata { display: none; }
+.selected-automaton-card { width: 100%; max-width: 1050px; margin: auto; padding: clamp(1.25rem, 3vw, 2.25rem); background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 35px rgb(28 49 87 / 7%); }
+.selected-automaton-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; }
+.selected-automaton-head h2 { margin: .35rem 0 .65rem; overflow-wrap: anywhere; font-size: clamp(1.7rem, 4vw, 2.35rem); font-weight: 750; letter-spacing: -.04em; }
+.selected-automaton-head p { margin: 0; color: var(--muted); }
+.selected-automaton-head .buttons { flex: none; justify-content: flex-end; }
+.selected-automaton-head .button { gap: .45rem; }
+.automaton-action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 2rem; }
+.automaton-action-grid button { display: flex; min-width: 0; align-items: center; gap: 1rem; padding: 1.2rem; color: var(--ink); text-align: left; background: #fbfcfe; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
+.automaton-action-grid button:hover { border-color: #9ab8f3; box-shadow: 0 10px 25px rgb(28 49 87 / 8%); transform: translateY(-2px); }
+.automaton-action-grid button:disabled { opacity: .45; box-shadow: none; transform: none; cursor: not-allowed; }
+.automaton-action-grid button > i { display: grid; width: 44px; height: 44px; flex: none; place-items: center; color: var(--primary); background: #eaf1ff; border-radius: 11px; }
+.automaton-action-grid button > span { display: flex; min-width: 0; flex-direction: column; }
+.automaton-action-grid strong { font-size: .9rem; }
+.automaton-action-grid small { margin-top: .2rem; color: var(--muted); line-height: 1.35; }
 .app-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem clamp(1rem, 3vw, 3rem); color: var(--muted); font-size: .78rem; background: white; border-top: 1px solid var(--line); }
 .app-footer a { color: var(--primary); font-weight: 700; }
 .app-footer a { display: inline-flex; min-height: 40px; align-items: center; padding-inline: .2rem; }
@@ -231,6 +252,12 @@ footer {
     .automaton-card-actions button:active { background: #edf3ff; }
     .automaton-card-actions button:disabled { color: #abb3c0; cursor: not-allowed; }
     .automaton-card-actions button.is-danger { color: #cc3151; }
+    .automaton-card.is-active { border-color: #9ab8f3; box-shadow: 0 0 0 2px rgb(40 103 232 / 10%); }
+    .selected-automaton-card { padding: 1.15rem; border-radius: 16px; }
+    .selected-automaton-head { flex-direction: column; }
+    .selected-automaton-head .buttons { width: 100%; justify-content: space-between; }
+    .automaton-action-grid { grid-template-columns: 1fr; margin-top: 1.4rem; }
+    .automaton-action-grid button { min-height: 72px; padding: 1rem; }
     .quick-grid { grid-template-columns: 1fr; margin-top: 1rem; }
     .app-footer { flex-direction: column; text-align: center; }
     .modal { align-items: flex-end; }
