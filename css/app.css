@@ -310,6 +310,7 @@ footer {
 
 .visual-automaton-editor { width: min(1100px, 86vw); max-width: 100%; color: var(--ink); }
 .modal-card:has(.visual-automaton-editor) { width: min(1150px, 94vw); }
+.modal-card:has(.simulation-layout) { width: min(1180px, 94vw); }
 .visual-editor-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-bottom: 1rem; }
 .visual-editor-toolbar h3 { margin: .2rem 0 0; font-size: 1.35rem; font-weight: 750; letter-spacing: -.03em; }
 .visual-name-field { width: min(360px, 48%); margin-bottom: 0 !important; }
