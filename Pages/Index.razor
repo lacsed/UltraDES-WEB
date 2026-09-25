@@ -24,6 +24,9 @@
         <button type="button" class="button nav-analysis-button is-hidden-mobile" @onclick="() => page = Page.AdvancedOperations" disabled="@(automata.Count == 0)">
             <i class="fas fa-flask" aria-hidden="true"></i><span>Analyze</span>
         </button>
+        <button type="button" class="button nav-analysis-button is-hidden-mobile" @onclick="OpenSimulation" disabled="@(automata.Count == 0)">
+            <i class="fas fa-play" aria-hidden="true"></i><span>Simulate</span>
+        </button>
         <div class="dropdown is-hoverable is-hidden-mobile">
             <button class="button" aria-haspopup="true" aria-controls="create">
                 <span>Create <i class="fas fa-angle-down"></i></span>
@@ -49,6 +52,7 @@
                     <button type="button" @onclick="() => OpenPage(Page.BinaryOperations)" class="is-mobile dropdown-item">Apply Binary Operation</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateSupervisor)" class="is-mobile dropdown-item">Supervisor Synthesis</button>
                     <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)" class="is-mobile dropdown-item">Advanced Analysis</button>
+                    <button type="button" @onclick="OpenSimulation" class="is-mobile dropdown-item">Simulate Automata</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
@@ -89,6 +93,7 @@
                     <button type="button" @onclick="() => OpenPage(Page.BinaryOperations)" class="is-mobile dropdown-item">Apply Binary Operation</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateSupervisor)" class="is-mobile dropdown-item">Supervisor Synthesis</button>
                     <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)" class="is-mobile dropdown-item">Advanced Analysis</button>
+                    <button type="button" @onclick="OpenSimulation" class="is-mobile dropdown-item">Simulate Automata</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Import</p>
@@ -256,6 +261,9 @@
             case Page.AdvancedOperations:
                 <Modal Title="Advanced Analysis" OnClose="@Clear"><AdvancedOperations Automata="automata" InitialAutomatonName="@selectedAutomatonName" OnAutomatonCreated="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
                 break;
+            case Page.AutomatonSimulation:
+                <Modal Title="Automaton Simulation" OnClose="@Clear"><AutomatonSimulation Automata="automata" InitialAutomatonNames="simulationInitialAutomatonNames" OnCancel="@Clear" /></Modal>
+                break;
             case Page.ExportWmod:
                 <Modal Title="Export Wmod" OnClose="@Clear"><ExportWmod Automata="automata" OnSuccess="@Clear" OnCancel="@Clear"></ExportWmod></Modal>
                 break;
@@ -300,6 +308,10 @@
                             <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)">
                                 <i class="fas fa-flask" aria-hidden="true"></i>
                                 <span><strong>Advanced analysis</strong><small>Projection, regex, conflict and more</small></span>
+                            </button>
+                            <button type="button" @onclick="() => OpenSimulation(new[] { selected.Name })">
+                                <i class="fas fa-play" aria-hidden="true"></i>
+                                <span><strong>Simulate</strong><small>Run this automaton with others from the workspace</small></span>
                             </button>
                             <button type="button" @onclick="() => SaveAutomaton(selected)">
                                 <i class="fas fa-download" aria-hidden="true"></i>
@@ -403,6 +415,7 @@
         BinaryOperations,
         UnaryOperations,
         AdvancedOperations,
+        AutomatonSimulation,
         ExportWmod
     }
 
@@ -430,6 +443,7 @@
     private bool mobileMenuOpen;
     private string layoutProgress = "";
     private CancellationTokenSource layoutCancellation;
+    private IEnumerable<string> simulationInitialAutomatonNames = [];
 
     private DeterministicFiniteAutomaton SelectedAutomaton =>
         !string.IsNullOrWhiteSpace(selectedAutomatonName) && automata.TryGetValue(selectedAutomatonName, out var selected)
@@ -486,6 +500,18 @@
     {
         page = target;
         mobileMenuOpen = false;
+    }
+
+    private void OpenSimulation()
+    {
+        simulationInitialAutomatonNames = [];
+        OpenPage(Page.AutomatonSimulation);
+    }
+
+    private void OpenSimulation(IEnumerable<string> initialAutomatonNames)
+    {
+        simulationInitialAutomatonNames = initialAutomatonNames.Where(automata.ContainsKey).ToArray();
+        OpenPage(Page.AutomatonSimulation);
     }
 
     private void AddState(AbstractState q)

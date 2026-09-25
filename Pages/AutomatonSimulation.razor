@@ -1,0 +1,132 @@
+@using global::UltraDES
+@inject AutomatonSimulationService Simulation
+
+<div class="automaton-simulation">
+    <header class="simulation-intro">
+        <span class="eyebrow">Interactive execution</span>
+        <h3>Simulate selected automata together</h3>
+        <p>Choose the models to synchronize. Every run begins at the initial state; an event is available only when no selected automaton prohibits it.</p>
+    </header>
+
+    @if (Automata.Count == 0)
+    {
+        <div class="notification is-info is-light">Create or import an automaton before starting a simulation.</div>
+    }
+    else
+    {
+        <section class="simulation-picker" aria-labelledby="simulation-picker-title">
+            <div class="simulation-section-heading">
+                <div><h4 id="simulation-picker-title">Automata in this run</h4><p>Select one or more automata.</p></div>
+                <button type="button" class="button is-small is-light" @onclick="Reset" disabled="@(selectedNames.Count == 0)"><i class="fas fa-redo"></i><span>Reset</span></button>
+            </div>
+            <div class="simulation-automata-picker">
+                @foreach (var pair in Automata.OrderBy(item => item.Key, StringComparer.Ordinal))
+                {
+                    <label class="simulation-automaton-check @(selectedNames.Contains(pair.Key) ? "is-selected" : "")">
+                        <input type="checkbox" checked="@selectedNames.Contains(pair.Key)" @onchange="args => SetSelected(pair.Key, args.Value)" />
+                        <span><strong>@pair.Key</strong><small>@pair.Value.States.Count() states · @pair.Value.Events.Count() events</small></span>
+                    </label>
+                }
+            </div>
+        </section>
+
+        @if (SelectedAutomata.Length == 0)
+        {
+            <div class="simulation-empty"><i class="fas fa-hand-pointer"></i><span>Select at least one automaton to see its initial state and available events.</span></div>
+        }
+        else
+        {
+            <section class="simulation-events" aria-labelledby="simulation-events-title">
+                <div class="simulation-section-heading">
+                    <div><h4 id="simulation-events-title">Enabled events</h4><p>Choose an event to advance all automata that define it.</p></div>
+                    <span class="simulation-step">Step @history.Count</span>
+                </div>
+                <div class="simulation-event-list" aria-live="polite">
+                    @foreach (var simulationEvent in EnabledEvents)
+                    {
+                        <button type="button" class="simulation-event @(simulationEvent.IsControllable ? "" : "is-uncontrollable")" @onclick="() => Fire(simulationEvent.ToString())">
+                            <i class="fas @(simulationEvent.IsControllable ? "fa-play" : "fa-bolt")" aria-hidden="true"></i>@simulationEvent
+                        </button>
+                    }
+                    @if (EnabledEvents.Length == 0)
+                    {
+                        <span class="simulation-deadlock"><i class="fas fa-exclamation-triangle"></i>No enabled events — deadlock.</span>
+                    }
+                </div>
+                @if (history.Count > 0)
+                {
+                    <p class="simulation-history" aria-live="polite"><strong>Sequence:</strong> @string.Join(" → ", history)</p>
+                }
+            </section>
+
+            <section class="simulation-models" aria-labelledby="simulation-models-title">
+                <div class="simulation-section-heading"><div><h4 id="simulation-models-title">Current states</h4><p>The highlighted state is active in each automaton.</p></div></div>
+                <div class="simulation-model-grid">
+                    @foreach (var automaton in SelectedAutomata)
+                    {
+                        var active = activeStates[automaton.Name];
+                        <article class="simulation-model-card">
+                            <header><span class="simulation-model-icon"><i class="fas fa-project-diagram"></i></span><div><h5>@automaton.Name</h5><p>Active: <strong>@active</strong></p></div></header>
+                            <div class="simulation-state-list" aria-label="States of @automaton.Name">
+                                @foreach (var state in automaton.States.OrderBy(item => item.ToString(), StringComparer.Ordinal))
+                                {
+                                    <span class="simulation-state @(state.Equals(active) ? "is-active" : "") @(state.IsMarked ? "is-marked" : "")">
+                                        @if (state.Equals(automaton.InitialState)) { <i class="fas fa-play" title="Initial state"></i> }@state
+                                    </span>
+                                }
+                            </div>
+                            <details class="simulation-transitions"><summary>Transitions</summary><ul>
+                                @foreach (var transition in automaton.Transitions.OrderBy(item => item.Origin.ToString(), StringComparer.Ordinal).ThenBy(item => item.Trigger.ToString(), StringComparer.Ordinal))
+                                {
+                                    <li class="@(transition.Origin.Equals(active) ? "is-current" : "")"><code>@transition.Origin</code><i class="fas fa-arrow-right"></i><strong>@transition.Trigger</strong><i class="fas fa-arrow-right"></i><code>@transition.Destination</code></li>
+                                }
+                            </ul></details>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+    }
+    <div class="buttons simulation-actions"><button type="button" class="button" @onclick="OnCancel"><i class="fas fa-times"></i>Close</button></div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
+    [Parameter] public IEnumerable<string> InitialAutomatonNames { get; set; } = [];
+    [Parameter] public Action OnCancel { get; set; }
+
+    private readonly HashSet<string> selectedNames = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, AbstractState> activeStates = new Dictionary<string, AbstractState>();
+    private readonly List<string> history = [];
+    private bool initialized;
+
+    private DeterministicFiniteAutomaton[] SelectedAutomata => Automata.Where(pair => selectedNames.Contains(pair.Key))
+        .OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => pair.Value).ToArray();
+    private AbstractEvent[] EnabledEvents => SelectedAutomata.Length == 0 ? [] : Simulation.EnabledEvents(SelectedAutomata, activeStates).ToArray();
+
+    protected override void OnParametersSet()
+    {
+        if (initialized) return;
+        selectedNames.UnionWith(InitialAutomatonNames.Where(Automata.ContainsKey));
+        initialized = true;
+        Reset();
+    }
+
+    private void SetSelected(string name, object value)
+    {
+        if (value is true) selectedNames.Add(name); else selectedNames.Remove(name);
+        Reset();
+    }
+
+    private void Reset()
+    {
+        activeStates = SelectedAutomata.Length == 0 ? new Dictionary<string, AbstractState>() : Simulation.InitialStates(SelectedAutomata);
+        history.Clear();
+    }
+
+    private void Fire(string eventName)
+    {
+        activeStates = Simulation.Fire(SelectedAutomata, activeStates, eventName);
+        history.Add(eventName);
+    }
+}

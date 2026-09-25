@@ -17,5 +17,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<WorkspaceStorage>();
 builder.Services.AddScoped<AutomatonDraftValidator>();
 builder.Services.AddScoped<AutomatonLayoutService>();
+builder.Services.AddScoped<AutomatonSimulationService>();
 
 await builder.Build().RunAsync();
