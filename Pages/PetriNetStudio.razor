@@ -1,6 +1,7 @@
 @page "/petri-nets"
 @using System.Text.Json
 @using PNMarking = UltraDES.PetriNets.Marking
+@using PNNet = UltraDES.PetriNets.PetriNet
 @using PNTransition = UltraDES.PetriNets.Transition
 @inject IJSRuntime JSRuntime
 
@@ -69,7 +70,7 @@
 
 @if (simulationOpen && selected is not null && currentMarking is not null)
 {
-    <Modal Title="@($"Simulation — {selected.Name}")" OnClose="CloseSimulation">@Simulation()</Modal>
+    <Modal Title="@($"Simulation — {selected.Name}")" OnClose="CloseSimulation">@SimulationPanel()</Modal>
 }
 
 @code {
@@ -88,8 +89,11 @@
     private readonly HashSet<string> selectedTransitions = [];
     private readonly List<ArcRow> arcRows = [];
     private readonly Dictionary<string, uint> tokenEditor = [];
+    private PNNet simulationNet;
     private PNMarking currentMarking;
     private bool simulationOpen;
+    private bool simulationBusy;
+    private string simulationSvg = "", simulationError = "";
     private readonly List<string> firingHistory = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -112,7 +116,67 @@
 
     private RenderFragment IncidenceTable() => @<div class="table-container incidence-table"><table class="table is-fullwidth is-striped"><caption>Rows are places; columns are transitions. UltraDES reports input minus output arc weights.</caption><thead><tr><th scope="col">Place</th>@foreach(var transition in incidenceTransitions){<th scope="col">@transition</th>}</tr></thead><tbody>@for(var row=0;row<incidencePlaces.Length;row++){var rowIndex=row;<tr><th scope="row">@incidencePlaces[rowIndex]</th>@for(var column=0;column<incidenceTransitions.Length;column++){var columnIndex=column;<td class="@(incidenceMatrix[rowIndex,columnIndex] < 0 ? "is-negative" : incidenceMatrix[rowIndex,columnIndex] > 0 ? "is-positive" : "")">@incidenceMatrix[rowIndex,columnIndex]</td>}</tr>}</tbody></table></div>;
 
-    private RenderFragment Simulation() => @<div class="simulation"><div class="field"><label class="label">Initial marking</label><div class="select is-fullwidth"><select @onchange="ChangeSimulationMarking">@foreach(var marking in AssociatedMarkings()) { <option value="@marking.Name">@marking.Name</option> }</select></div></div><h4>Current marking</h4><div class="marking-chips">@foreach(var value in currentMarking!.Values.OrderBy(v=>v.Item1.ToString())){<span><strong>@value.Item1</strong> = @(value.Item2?.ToString() ?? "ω")</span>}</div><h4>Enabled transitions</h4><div class="buttons">@foreach(var transition in Built(CurrentSimulationMarking()).Net.EnabledTransitions(currentMarking)){<button class="button is-primary" @onclick="() => Fire(transition)"><i class="fas fa-play"></i>&nbsp; @transition</button>}@if(!Built(CurrentSimulationMarking()).Net.EnabledTransitions(currentMarking).Any()){<span class="tag is-warning">Deadlock: no enabled transitions</span>}</div>@if(firingHistory.Count>0){<p><strong>Sequence:</strong> @string.Join(" → ",firingHistory)</p>}<button class="button is-light" @onclick="ResetSimulation"><i class="fas fa-redo"></i>&nbsp; Reset</button></div>;
+    private RenderFragment SimulationPanel()
+    {
+        var enabledTransitions = simulationNet?.EnabledTransitions(currentMarking!).ToArray() ?? [];
+        return @<div class="simulation">
+            @if (!string.IsNullOrWhiteSpace(simulationError))
+            {
+                <div class="notification is-danger is-light" role="alert">@simulationError</div>
+            }
+            <div class="simulation-layout">
+                <section class="simulation-controls" aria-labelledby="simulation-controls-title">
+                    <div class="field">
+                        <label class="label" for="simulation-marking">Initial marking</label>
+                        <div class="select is-fullwidth">
+                            <select id="simulation-marking" value="@simulationMarkingName" @onchange="ChangeSimulationMarking" disabled="@simulationBusy">
+                                @foreach (var marking in AssociatedMarkings()) { <option value="@marking.Name">@marking.Name</option> }
+                            </select>
+                        </div>
+                    </div>
+                    <h4 id="simulation-controls-title">Current marking</h4>
+                    <div class="marking-chips" aria-live="polite">
+                        @foreach (var value in currentMarking!.Values.OrderBy(item => item.Item1.ToString()))
+                        {
+                            <span><strong>@value.Item1</strong> = @(value.Item2?.ToString() ?? "ω")</span>
+                        }
+                    </div>
+                    <h4>Enabled transitions</h4>
+                    <div class="buttons simulation-transitions" aria-live="polite">
+                        @foreach (var transition in enabledTransitions)
+                        {
+                            <button type="button" class="button is-primary" disabled="@simulationBusy" @onclick="() => Fire(transition)"><i class="fas fa-play"></i>&nbsp; @transition</button>
+                        }
+                        @if (enabledTransitions.Length == 0)
+                        {
+                            <span class="tag is-warning">Deadlock: no enabled transitions</span>
+                        }
+                    </div>
+                    @if (firingHistory.Count > 0)
+                    {
+                        <p class="simulation-history"><strong>Sequence:</strong> @string.Join(" → ", firingHistory)</p>
+                    }
+                    <button type="button" class="button is-light" disabled="@simulationBusy" @onclick="ResetSimulation"><i class="fas fa-redo"></i>&nbsp; Reset</button>
+                </section>
+                <section class="simulation-visual" aria-labelledby="simulation-visual-title">
+                    <div class="simulation-visual-heading">
+                        <h4 id="simulation-visual-title">Network state</h4>
+                        <small>Tokens appear inside places; zero is shown as empty.</small>
+                    </div>
+                    <div class="petri-simulation-drawing" aria-live="polite" aria-busy="@(simulationBusy ? "true" : "false")">
+                        @if (simulationBusy && string.IsNullOrWhiteSpace(simulationSvg))
+                        {
+                            <span class="simulation-loading"><i class="fas fa-circle-notch fa-spin"></i> Updating network…</span>
+                        }
+                        else
+                        {
+                            @((MarkupString)simulationSvg)
+                        }
+                    </div>
+                </section>
+            </div>
+        </div>;
+    }
 
     private void BeginNode(WorkspaceMode target) { mode=target; nodeName=""; ResetViews(); }
     private async Task EnterNode(KeyboardEventArgs e) { if(e.Key=="Enter") await SaveNode(); }
@@ -156,11 +220,49 @@
     private async Task ShowCoverability(bool tree){try{ResetViews();var built=Built(AssociatedMarkings().First());var edges=built.Net.CoverabilityGraph(built.Marking).ToArray();var body=tree?string.Join(" ",edges.Select((e,i)=>$"\"n{i}a:{e.Item1}\" -> \"n{i}b:{e.Item3}\" [label=\"{e.Item2}\"];")):string.Join(" ",edges.Select(e=>$"\"{e.Item1}\" -> \"{e.Item3}\" [label=\"{e.Item2}\"];"));var dot=$"digraph G {{ rankdir={(tree?"TB":"LR")}; node [shape=box]; {body} }}";svg=await JSRuntime.InvokeAsync<string>("GraphViz",dot);analysis=$"{edges.Length} arcs in the {(tree?"tree unfolding":"coverability graph")}. ω represents unbounded growth.";}catch(Exception ex){error=ex.Message;}}
     private async Task ShowReachability(){try{ResetViews();var built=Built(AssociatedMarkings().First());var edges=built.Net.ReachabilityTree(built.Marking).ToArray();var body=string.Join(" ",edges.Select(edge=>$"\"{edge.Item1}\" -> \"{edge.Item3}\" [label=\"{edge.Item2}\"];"));var dot=$"digraph G {{ rankdir=LR; node [shape=box]; {body} }}";svg=await JSRuntime.InvokeAsync<string>("GraphViz",dot);var markingCount=edges.SelectMany(edge => new[]{edge.Item1.ToString(),edge.Item3.ToString()}).Distinct(StringComparer.Ordinal).Count();analysis=$"{markingCount} reachable markings and {edges.Length} firing edges.";}catch(Exception ex){error=ex.Message;}}
     private void ShowIncidence(){try{ResetViews();var built=PetriNetWorkspace.Build(selected!);incidenceMatrix=built.Net.IncidenceMatrix(out var placeIndex,out var transitionIndex);incidencePlaces=placeIndex.OrderBy(pair=>pair.Value).Select(pair=>pair.Key.ToString()).ToArray();incidenceTransitions=transitionIndex.OrderBy(pair=>pair.Value).Select(pair=>pair.Key.ToString()).ToArray();analysis="Positive values consume tokens, negative values produce tokens, and zero values have no net effect in the UltraDES incidence convention.";}catch(Exception ex){error=ex.Message;}}
-    private void OpenSimulation(){simulationOpen=true;simulationMarkingName=AssociatedMarkings().First().Name;ResetSimulation();}
-    private void CloseSimulation(){simulationOpen=false;currentMarking=null;firingHistory.Clear();}
-    private void ChangeSimulationMarking(ChangeEventArgs e){simulationMarkingName=e.Value?.ToString()??"";ResetSimulation();}
-    private void ResetSimulation(){currentMarking=Built(CurrentSimulationMarking()).Marking;firingHistory.Clear();}
-    private void Fire(PNTransition transition){currentMarking=Built(CurrentSimulationMarking()).Net.Fire(currentMarking!,transition);firingHistory.Add(transition.ToString());}
+    private async Task OpenSimulation(){simulationOpen=true;simulationMarkingName=AssociatedMarkings().First().Name;await ResetSimulation();}
+    private void CloseSimulation(){simulationOpen=false;simulationNet=null;currentMarking=null;simulationSvg="";simulationError="";firingHistory.Clear();}
+    private async Task ChangeSimulationMarking(ChangeEventArgs e){simulationMarkingName=e.Value?.ToString()??"";await ResetSimulation();}
+    private async Task ResetSimulation()
+    {
+        if (simulationBusy) return;
+        simulationBusy=true;
+        simulationError="";
+        try
+        {
+            var built=Built(CurrentSimulationMarking());
+            simulationNet=built.Net;
+            currentMarking=built.Marking;
+            firingHistory.Clear();
+            simulationSvg="";
+            await InvokeAsync(StateHasChanged);
+            await RefreshSimulationDrawing();
+        }
+        catch(Exception ex){simulationError=ex.Message;}
+        finally{simulationBusy=false;}
+    }
+    private async Task Fire(PNTransition transition)
+    {
+        if(simulationBusy||simulationNet is null||currentMarking is null)return;
+        simulationBusy=true;
+        simulationError="";
+        try
+        {
+            currentMarking=simulationNet.Fire(currentMarking,transition);
+            firingHistory.Add(transition.ToString());
+            simulationSvg="";
+            await InvokeAsync(StateHasChanged);
+            await RefreshSimulationDrawing();
+        }
+        catch(Exception ex){simulationError=ex.Message;}
+        finally{simulationBusy=false;}
+    }
+    private async Task RefreshSimulationDrawing()
+    {
+        if(selected is null||currentMarking is null)return;
+        var dot=PetriNetWorkspace.ToSimulationDot(selected,currentMarking);
+        simulationSvg=await JSRuntime.InvokeAsync<string>("GraphViz",dot);
+    }
     private async Task LoadResourceExample()
     {
         const string exampleName = "Resource allocation";

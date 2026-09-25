@@ -43,6 +43,46 @@ public sealed class PetriNetWorkspaceTests
     }
 
     [Fact]
+    public void Firing_updates_the_marking_and_enabled_transitions_on_the_same_net()
+    {
+        var (net, initialMarking) = PetriNetWorkspace.Build(ResourceNet("Simulation"));
+        var enter = net.Transitions.Single(transition => transition.ToString() == "enter");
+        var leave = net.Transitions.Single(transition => transition.ToString() == "leave");
+        var free = net.Places.Single(place => place.ToString() == "free");
+        var busy = net.Places.Single(place => place.ToString() == "busy");
+
+        var afterEnter = net.Fire(initialMarking, enter);
+
+        Assert.Equal((uint?)0, afterEnter[free]);
+        Assert.Equal((uint?)1, afterEnter[busy]);
+        Assert.DoesNotContain(enter, net.EnabledTransitions(afterEnter));
+        Assert.Contains(leave, net.EnabledTransitions(afterEnter));
+
+        var afterLeave = net.Fire(afterEnter, leave);
+        Assert.Equal((uint?)1, afterLeave[free]);
+        Assert.Equal((uint?)0, afterLeave[busy]);
+        Assert.Contains(enter, net.EnabledTransitions(afterLeave));
+    }
+
+    [Fact]
+    public void Simulation_drawing_shows_positive_tokens_and_leaves_zero_places_empty()
+    {
+        var draft = ResourceNet("Drawing");
+        var (net, initialMarking) = PetriNetWorkspace.Build(draft);
+        var enter = net.Transitions.Single(transition => transition.ToString() == "enter");
+
+        var initialDot = PetriNetWorkspace.ToSimulationDot(draft, initialMarking);
+        var initialFree = NodeLine(initialDot, "place:free");
+        var initialBusy = NodeLine(initialDot, "place:busy");
+        Assert.Contains("label=\"1\"", initialFree);
+        Assert.Contains("label=\"\"", initialBusy);
+
+        var updatedDot = PetriNetWorkspace.ToSimulationDot(draft, net.Fire(initialMarking, enter));
+        Assert.Contains("label=\"\"", NodeLine(updatedDot, "place:free"));
+        Assert.Contains("label=\"1\"", NodeLine(updatedDot, "place:busy"));
+    }
+
+    [Fact]
     public void Build_rejects_arcs_between_nodes_of_the_same_kind()
     {
         var draft = ResourceNet("Invalid") with
@@ -76,4 +116,6 @@ public sealed class PetriNetWorkspaceTests
         ["free", "busy"], ["enter", "leave"],
         [new("free", "enter", 1), new("enter", "busy", 1), new("busy", "leave", 1), new("leave", "free", 1)],
         new() { ["free"] = 1, ["busy"] = 0 });
+
+    private static string NodeLine(string dot, string nodeId) => dot.Split('\n').Single(line => line.Contains($"\"{nodeId}\" [", StringComparison.Ordinal));
 }

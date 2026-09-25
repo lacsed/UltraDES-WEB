@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UltraDES.PetriNets;
 
 namespace UltraDESWeb.Services;
@@ -69,6 +70,57 @@ public static class PetriNetWorkspace
         return new PetriNetDraft(name, placeNames, transitionNames, arcs, marking);
     }
 
+    /// <summary>Creates a Graphviz representation whose place labels show the current token count.</summary>
+    public static string ToSimulationDot(PetriNetDraft draft, Marking marking)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+        ArgumentNullException.ThrowIfNull(marking);
+
+        var placeNames = Normalize(draft.Places, "place");
+        var transitionNames = Normalize(draft.Transitions, "transition");
+        var placeSet = placeNames.ToHashSet(StringComparer.Ordinal);
+        var transitionSet = transitionNames.ToHashSet(StringComparer.Ordinal);
+        var tokens = marking.Values.ToDictionary(item => item.Item1.ToString(), item => item.Item2, StringComparer.Ordinal);
+        var dot = new StringBuilder();
+
+        dot.AppendLine("digraph PetriNet {");
+        dot.AppendLine("  rankdir=LR;");
+        dot.AppendLine("  graph [bgcolor=\"transparent\", pad=\"0.2\", nodesep=\"0.75\", ranksep=\"0.85\"];");
+        dot.AppendLine("  node [fontname=\"Arial\", color=\"#2867e8\", fontcolor=\"#15233b\", penwidth=\"2\"];");
+        dot.AppendLine("  edge [fontname=\"Arial\", color=\"#718096\", fontcolor=\"#475569\", penwidth=\"1.5\", arrowsize=\"0.75\"];");
+
+        foreach (var place in placeNames)
+        {
+            tokens.TryGetValue(place, out var count);
+            var tokenLabel = count is null ? "ω" : count == 0 ? string.Empty : count.Value.ToString();
+            dot.Append("  ").Append(DotQuote($"place:{place}"))
+                .Append(" [shape=circle, fixedsize=true, width=\"0.72\", height=\"0.72\", label=")
+                .Append(DotQuote(tokenLabel)).Append(", xlabel=").Append(DotQuote(place)).AppendLine("];");
+        }
+
+        foreach (var transition in transitionNames)
+        {
+            dot.Append("  ").Append(DotQuote($"transition:{transition}"))
+                .Append(" [shape=box, fixedsize=true, width=\"0.18\", height=\"0.78\", style=filled, fillcolor=\"#2867e8\", label=\"\", xlabel=")
+                .Append(DotQuote(transition)).AppendLine("];");
+        }
+
+        foreach (var arc in draft.Arcs ?? [])
+        {
+            var originPrefix = placeSet.Contains(arc.Origin) ? "place" : transitionSet.Contains(arc.Origin) ? "transition" : null;
+            var destinationPrefix = placeSet.Contains(arc.Destination) ? "place" : transitionSet.Contains(arc.Destination) ? "transition" : null;
+            if (originPrefix is null || destinationPrefix is null) continue;
+
+            dot.Append("  ").Append(DotQuote($"{originPrefix}:{arc.Origin}"))
+                .Append(" -> ").Append(DotQuote($"{destinationPrefix}:{arc.Destination}"));
+            if (arc.Weight > 1) dot.Append(" [label=").Append(DotQuote(arc.Weight.ToString())).Append(']');
+            dot.AppendLine(";");
+        }
+
+        dot.AppendLine("}");
+        return dot.ToString();
+    }
+
     private static string[] Normalize(IEnumerable<string> values, string kind)
     {
         var normalized = (values ?? []).Select(value => value?.Trim()).Where(value => !string.IsNullOrWhiteSpace(value)).ToArray()!;
@@ -77,4 +129,6 @@ public static class PetriNetWorkspace
         if (normalized.Length == 0) throw new ArgumentException($"At least one {kind} is required.");
         return normalized;
     }
+
+    private static string DotQuote(string value) => $"\"{(value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " ")}\"";
 }
