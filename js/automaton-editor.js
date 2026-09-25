@@ -1,4 +1,5 @@
 const NS = "http://www.w3.org/2000/svg";
+const SNAP_SIZE = 20;
 
 export function createAutomatonEditor(host, layoutOnly = false) {
     const draft = { states: [], events: [], transitions: [], initialStateId: null };
@@ -15,6 +16,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     let contextMenu = null;
 
     const point = event => { const p = svg.createSVGPoint(); p.x = event.clientX; p.y = event.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+    const snap = point => ({ x: Math.round(point.x / SNAP_SIZE) * SNAP_SIZE, y: Math.round(point.y / SNAP_SIZE) * SNAP_SIZE });
     const stateAt = id => draft.states.find(q => q.id === id);
     const edgeAt = id => draft.transitions.find(t => t.id === id);
     const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
@@ -65,7 +67,8 @@ export function createAutomatonEditor(host, layoutOnly = false) {
     }
 
     function addStateAt(p, initial) {
-        const state = { id: uid("state"), name: "", marked: false, x: p.x, y: p.y };
+        const position = snap(p);
+        const state = { id: uid("state"), name: "", marked: false, x: position.x, y: position.y };
         draft.states.push(state);
         if (initial) draft.initialStateId = state.id;
         selection = { type: "state", id: state.id, replaceOnType: true };
@@ -221,11 +224,11 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (drag.type === "touch-menu") return;
         if (drag.type === "state" && distance(p, drag.start) > 5) {
             if (drag.pointerType === "touch" && drag.held && !layoutOnly) { drag.type = "transition"; preview = { from: stateAt(drag.id), to: p }; }
-            else if (drag.pointerType !== "touch" || layoutOnly || !drag.held) { clearTimeout(touchHoldTimer); const q = stateAt(drag.id); q.x = p.x; q.y = p.y; }
+            else if (drag.pointerType !== "touch" || layoutOnly || !drag.held) { clearTimeout(touchHoldTimer); const q = stateAt(drag.id), position = snap(p); q.x = position.x; q.y = position.y; }
         }
         if (drag.type === "transition" && distance(p, drag.start) > 5) preview = { from: stateAt(drag.id), to: p };
         if (drag.type === "canvas" && layoutOnly) { viewport.panX = drag.originX - (p.x - drag.start.x); viewport.panY = drag.originY - (p.y - drag.start.y); updateViewBox(); }
-        if (drag.type === "control") { const edge = edgeAt(drag.id); edge.controlX = p.x; edge.controlY = p.y; }
+        if (drag.type === "control") { const edge = edgeAt(drag.id), position = snap(p); edge.controlX = position.x; edge.controlY = position.y; }
         render();
     });
 
@@ -310,9 +313,9 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         copy.setAttribute("viewBox", `0 0 ${viewport.canvasWidth} ${viewport.canvasHeight}`);
         copy.setAttribute("width", viewport.canvasWidth);
         copy.setAttribute("height", viewport.canvasHeight);
-        copy.querySelectorAll(".transition-hit-area,.transition-control").forEach(item => item.remove());
+        copy.querySelectorAll(".transition-hit-area,.transition-control,.transition-label rect").forEach(item => item.remove());
         const style = document.createElementNS(NS, "style");
-        style.textContent = `.visual-state circle{fill:#fff;stroke:#1f2937;stroke-width:3}.visual-state text,.visual-transition text{fill:#111827;font:600 14px sans-serif}.visual-transition>path{fill:none;stroke:#374151;stroke-width:2.5}.transition-label rect{fill:#fff;stroke:#3273dc;stroke-width:2}.transition-label.is-uncontrollable rect{stroke:#e53935}.transition-label.is-uncontrollable text{fill:#c62828}.visual-arrow-head{fill:#374151}.initial-arrow{fill:none;stroke:#111827;stroke-width:3}`;
+        style.textContent = `.visual-state circle{fill:#fff;stroke:#1f2937;stroke-width:3}.visual-state text,.visual-transition text{fill:#111827;font:600 14px sans-serif}.visual-transition>path{fill:none;stroke:#374151;stroke-width:2.5}.visual-arrow-head{fill:#374151}.initial-arrow{fill:none;stroke:#111827;stroke-width:3}`;
         copy.prepend(style);
         download(new XMLSerializer().serializeToString(copy), "image/svg+xml;charset=utf-8", "svg");
     }
@@ -328,7 +331,7 @@ export function createAutomatonEditor(host, layoutOnly = false) {
         if (draft.initialStateId && ids.has(draft.initialStateId)) lines.push(`  \\draw[->] ([xshift=-14mm]${ids.get(draft.initialStateId)}.west) -- (${ids.get(draft.initialStateId)}.west);`);
         for (const edge of draft.transitions) {
             const source = ids.get(edge.sourceId), target = ids.get(edge.targetId);
-            const labels = edge.eventNames.map(name => draft.events.find(e => e.name === name)?.controllable === false ? `\\textcolor{red}{${texEscape(name)}}` : texEscape(name)).join(", ");
+            const labels = edge.eventNames.map(texEscape).join(", ");
             if (edge.sourceId === edge.targetId) {
                 const state = stateAt(edge.sourceId), side = edge.controlY < state.y ? "above" : "below";
                 lines.push(`  \\path[->] (${source}) edge[loop ${side}] node {${labels}} (${target});`);
