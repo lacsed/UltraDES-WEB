@@ -5,13 +5,14 @@
 @inject WorkspaceStorage WorkspaceStorage;
 @inject AutomatonLayoutService AutomatonLayoutService;
 
-<nav class="app-navbar grid-header" role="navigation" aria-label="main navigation">
+<a class="skip-link" href="#workspace-main">Skip to workspace</a>
+<nav class="app-navbar grid-header" role="navigation" aria-label="Main navigation">
     <div class="navbar-brand">
         <a class="navbar-item app-brand" href="https://github.com/lacsed/UltraDES">
             <img src="/UltraDES/img/logo.png" alt="UltraDES" width="112" height="50">
             <span class="brand-copy"><strong>UltraDES</strong><small>Discrete Event Systems</small></span>
         </a>
-        <button type="button" class="mobile-menu-button" aria-label="Toggle navigation" aria-expanded="@mobileMenuOpen" @onclick="() => mobileMenuOpen = !mobileMenuOpen">
+        <button type="button" class="mobile-menu-button" aria-label="Toggle navigation" aria-expanded="@(mobileMenuOpen ? "true" : "false")" @onclick="() => mobileMenuOpen = !mobileMenuOpen">
             <i class="fas @(mobileMenuOpen ? "fa-times" : "fa-bars")"></i>
         </button>
     </div>
@@ -20,16 +21,19 @@
             <a class="is-active" href="/" aria-current="page"><i class="fas fa-project-diagram"></i><span>Automata</span></a>
             <a href="petri-nets"><i class="fas fa-network-wired"></i><span>Petri nets</span></a>
         </div>
+        <button type="button" class="button nav-analysis-button is-hidden-mobile" @onclick="() => page = Page.AdvancedOperations" disabled="@(automata.Count == 0)">
+            <i class="fas fa-flask" aria-hidden="true"></i><span>Analyze</span>
+        </button>
         <div class="dropdown is-hoverable is-hidden-mobile">
             <button class="button" aria-haspopup="true" aria-controls="create">
                 <span>Create <i class="fas fa-angle-down"></i></span>
             </button>
             <div class="dropdown-menu" id="create" role="menu">
                 <div class="dropdown-content">
-                    <a @onclick="ev => page = Page.CreateState" class="is-mobile dropdown-item">Create State</a>
-                    <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
-                    <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
-                    <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateState)" class="is-mobile dropdown-item">Create State</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateEvent)" class="is-mobile dropdown-item">Create Event</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateVisualAutomaton)" class="is-mobile dropdown-item">Create Visual Automaton</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                 </div>
             </div>
@@ -40,15 +44,16 @@
             </button>
             <div class="dropdown-menu" id="operations" role="menu">
                 <div class="dropdown-content">
-                    <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
-                    <a @onclick="ev => page = Page.UnaryOperations" class="is-mobile dropdown-item">Apply Unary Operation</a>
-                    <a @onclick="ev => page = Page.BinaryOperations" class="is-mobile dropdown-item">Apply Binary Operation</a>
-                    <a @onclick="ev => page = Page.CreateSupervisor" class="is-mobile dropdown-item">Supervisor Synthesis</a>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
+                    <button type="button" @onclick="() => OpenPage(Page.UnaryOperations)" class="is-mobile dropdown-item">Apply Unary Operation</button>
+                    <button type="button" @onclick="() => OpenPage(Page.BinaryOperations)" class="is-mobile dropdown-item">Apply Binary Operation</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateSupervisor)" class="is-mobile dropdown-item">Supervisor Synthesis</button>
+                    <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)" class="is-mobile dropdown-item">Advanced Analysis</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod" @onchange="@(() => LoadWmodAutomaton("loadwmod"))"><a>Upload Wmod Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input @onclick="ev => page = Page.ExportWmod" style="display: none"><a>Export Wmod</a></label>
+                    <button type="button" class="is-mobile dropdown-item" @onclick="() => OpenPage(Page.ExportWmod)">Export Wmod</button>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads" @onchange="@(() => LoadAdsAutomaton("loadads"))"><a>Upload Ads Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml" @onchange="@(() => LoadXmlAutomaton("loadxml"))"><a>Upload XML Automaton</a></label>
                 </div>
@@ -60,8 +65,8 @@
             </button>
             <div class="dropdown-menu" id="examples" role="menu">
                 <div class="dropdown-content">
-                    <a @onclick="LoadSmallFactory" class="is-mobile dropdown-item">Small Factory</a>
-                    <a @onclick="LoadFlexibleManufacturingSystem" class="is-mobile dropdown-item">FMS</a>
+                    <button type="button" @onclick="LoadSmallFactory" class="is-mobile dropdown-item">Small Factory</button>
+                    <button type="button" @onclick="LoadFlexibleManufacturingSystem" class="is-mobile dropdown-item">FMS</button>
                 </div>
             </div>
         </div>
@@ -72,36 +77,37 @@
             <div class="dropdown-menu" id="mobile" role="menu">
                 <div class="dropdown-content">
                     <p class="menu-label dropdown-item">Create</p>
-                    <a @onclick="ev => page = Page.CreateState" class="is-mobile dropdown-item">Create State</a>
-                    <a @onclick="ev => page = Page.CreateEvent" class="is-mobile dropdown-item">Create Event</a>
-                    <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
-                    <a @onclick="ev => page = Page.CreateVisualAutomaton" class="is-mobile dropdown-item">Create Visual Automaton</a>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateState)" class="is-mobile dropdown-item">Create State</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateEvent)" class="is-mobile dropdown-item">Create Event</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateVisualAutomaton)" class="is-mobile dropdown-item">Create Visual Automaton</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Operations</p>
-                    <a @onclick="ev => page = Page.CreateAutomaton" class="is-mobile dropdown-item">Create Automaton</a>
-                    <a @onclick="ev => page = Page.UnaryOperations" class="is-mobile dropdown-item">Apply Unary Operation</a>
-                    <a @onclick="ev => page = Page.BinaryOperations" class="is-mobile dropdown-item">Apply Binary Operation</a>
-                    <a @onclick="ev => page = Page.CreateSupervisor" class="is-mobile dropdown-item">Supervisor Synthesis</a>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
+                    <button type="button" @onclick="() => OpenPage(Page.UnaryOperations)" class="is-mobile dropdown-item">Apply Unary Operation</button>
+                    <button type="button" @onclick="() => OpenPage(Page.BinaryOperations)" class="is-mobile dropdown-item">Apply Binary Operation</button>
+                    <button type="button" @onclick="() => OpenPage(Page.CreateSupervisor)" class="is-mobile dropdown-item">Supervisor Synthesis</button>
+                    <button type="button" @onclick="() => OpenPage(Page.AdvancedOperations)" class="is-mobile dropdown-item">Advanced Analysis</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Import</p>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson_m" @onchange="@(() => LoadJsonAutomaton("loadjson_m"))"><a>Upload Json Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod_m" @onchange="@(() => LoadWmodAutomaton("loadwmod_m"))"><a>Upload Wmod Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input style="display: none" @onclick="ev => page = Page.ExportWmod"><a>Export Wmod Automaton</a></label>
+                    <button type="button" class="is-mobile dropdown-item" @onclick="() => OpenPage(Page.ExportWmod)">Export Wmod Automaton</button>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads_m" @onchange="@(() => LoadAdsAutomaton("loadads_m"))"><a>Upload Ads Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml_m" @onchange="@(() => LoadXmlAutomaton("loadxml_m"))"><a>Upload XML Automaton</a></label>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Examples</p>
-                    <a @onclick="LoadSmallFactory" class="is-mobile dropdown-item">Small Factory</a>
-                    <a @onclick="LoadFlexibleManufacturingSystem" class="is-mobile dropdown-item">FMS</a>
+                    <button type="button" @onclick="LoadSmallFactory" class="is-mobile dropdown-item">Small Factory</button>
+                    <button type="button" @onclick="LoadFlexibleManufacturingSystem" class="is-mobile dropdown-item">FMS</button>
                 </div>
             </div>
         </div>
     </div>
 </nav>
 
-<main class="grid-content app-main">
+<main id="workspace-main" class="grid-content app-main" tabindex="-1">
     @if (!string.IsNullOrWhiteSpace(workspaceError))
     {
         <div class="notification is-danger" role="alert">@workspaceError</div>
@@ -290,6 +296,9 @@
             case Page.UnaryOperations:
                 <Modal Title="Apply an unary Operation" OnClose="@Clear"><ApplyUnaryOperation Automata="automata" OnSuccess="G => AddAutomaton(new[]{G}) " OnCancel="@Clear"></ApplyUnaryOperation></Modal>
                 break;
+            case Page.AdvancedOperations:
+                <Modal Title="Advanced Analysis" OnClose="@Clear"><AdvancedOperations Automata="automata" OnAutomatonCreated="G => AddAutomaton(new[]{G})" OnCancel="@Clear" /></Modal>
+                break;
             case Page.ExportWmod:
                 <Modal Title="Export Wmod" OnClose="@Clear"><ExportWmod Automata="automata" OnSuccess="@Clear" OnCancel="@Clear"></ExportWmod></Modal>
                 break;
@@ -348,6 +357,7 @@
                         <button @onclick="ev => page = Page.CreateState"><i class="far fa-circle"></i><span><strong>Create state</strong><small>Add marked or unmarked states</small></span></button>
                         <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
                         <button @onclick="LoadSmallFactory"><i class="fas fa-industry"></i><span><strong>Try an example</strong><small>Load the Small Factory</small></span></button>
+                        <button disabled="@(automata.Count == 0)" @onclick="ev => page = Page.AdvancedOperations"><i class="fas fa-flask"></i><span><strong>Advanced analysis</strong><small>Projection, regex, conflict and more</small></span></button>
                         <a href="petri-nets"><i class="fas fa-network-wired"></i><span><strong>Petri-net studio</strong><small>Model places, transitions and markings</small></span></a>
                     </div>
                 </div>
@@ -385,6 +395,7 @@
         CreateSupervisor,
         BinaryOperations,
         UnaryOperations,
+        AdvancedOperations,
         ExportWmod
     }
 
@@ -458,6 +469,12 @@
         StateHasChanged();
     }
 
+    private void OpenPage(Page target)
+    {
+        page = target;
+        mobileMenuOpen = false;
+    }
+
     private void AddState(AbstractState q)
     {
         page = Page.Empty;
@@ -470,7 +487,7 @@
         StateHasChanged();
     }
 
-    private async void RemoveState(string state)
+    private async Task RemoveState(string state)
     {
         if (!await JsRuntime.Confirm($"Delete State {state}?")) return;
         states.Remove(state);
@@ -490,7 +507,7 @@
         StateHasChanged();
     }
 
-    private async void RemoveEvent(string ev)
+    private async Task RemoveEvent(string ev)
     {
         if (!await JsRuntime.Confirm($"Delete Event {ev}?")) return;
         events.Remove(ev);
@@ -536,7 +553,7 @@
         return true;
     }
 
-    private async void RemoveAutomaton(string aut)
+    private async Task RemoveAutomaton(string aut)
     {
         if (!await JsRuntime.Confirm($"Delete Automaton {aut}?")) return;
         automata.Remove(aut);
@@ -683,7 +700,7 @@
         JsRuntime.SaveFile($"{G.Name}.json", DeterministicFiniteAutomaton.ToJsonString(G));
     }
 
-    private async void LoadJsonAutomaton(string name)
+    private async Task LoadJsonAutomaton(string name)
     {
         var json = await JsRuntime.ReadFile(name);
         var aut = DeterministicFiniteAutomaton.FromJsonString(json);
@@ -691,7 +708,7 @@
         StateHasChanged();
     }
 
-    private async void LoadWmodAutomaton(string name)
+    private async Task LoadWmodAutomaton(string name)
     {
         var wmod = await JsRuntime.ReadFile(name);
         DeterministicFiniteAutomaton.FromWmodString(wmod, out var p, out var e);
@@ -700,7 +717,7 @@
         StateHasChanged();
     }
 
-    private async void LoadAdsAutomaton(string name)
+    private async Task LoadAdsAutomaton(string name)
     {
         var ads = await JsRuntime.ReadFile(name);
         var aut = DeterministicFiniteAutomaton.FromAdsString(ads);
@@ -708,7 +725,7 @@
         StateHasChanged();
     }
 
-    private async void LoadXmlAutomaton(string name)
+    private async Task LoadXmlAutomaton(string name)
     {
         var xml = await JsRuntime.ReadFile(name);
         var aut = DeterministicFiniteAutomaton.FromXMLString(xml);

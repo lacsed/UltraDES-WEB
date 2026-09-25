@@ -2,63 +2,42 @@
 
 @inject AutomatonDraftValidator Validator
 
-<div>
-    <div class="field is-horizontal">
-        <label class="field-label" for="trans">Transitions</label>
-        <div class="field-body is-grouped">
-            <input type="range" min="1" max="25" style="width: 80%" id="trans" @bind="transitionsNum">
-            <input type="number" class="input" style="width: 20%" id="trans" @bind="transitionsNum">
+<div class="automaton-form">
+    @if (States.Count == 0 || Events.Count == 0)
+    {
+        <div class="notification is-info is-light" role="status">Create at least one state and one event before building an automaton.</div>
+    }
+    <div class="field transition-count-field">
+        <label class="label" for="transition-count-range">Number of transitions <span class="tag is-info is-light">@transitionsNum</span></label>
+        <div class="transition-count-controls">
+            <input type="range" min="1" max="25" id="transition-count-range" aria-label="Number of transitions" @bind="transitionsNum">
+            <input type="number" min="1" max="25" class="input" id="transition-count-number" aria-label="Number of transitions as a number" @bind="transitionsNum">
         </div>
     </div>
-    @for (var l = 0; l < transitionsNum; l++)
-    {
-        var i = l;
-<div class="field has-addons-centered">
-    <div class="select">
-        <select class="form-control" id="origin" @bind="@transitions[i, 0]">
-            <option value=""></option>
-            @foreach (var q in States)
-            {
-                <option value="@q.Key"> @q.Key </option>
-            }
-        </select>
+    <div class="transition-editor" aria-label="Transitions">
+        @for (var l = 0; l < transitionsNum; l++)
+        {
+            var i = l;
+            <fieldset class="transition-row">
+                <legend>Transition @(i + 1)</legend>
+                <div class="field"><label class="label" for="origin-@i">Origin</label><div class="select is-fullwidth"><select id="origin-@i" @bind="@transitions[i, 0]"><option value="">Choose state</option>@foreach (var q in States){<option value="@q.Key">@q.Key</option>}</select></div></div>
+                <span class="transition-arrow" aria-hidden="true">→</span>
+                <div class="field"><label class="label" for="event-@i">Event</label><div class="select is-fullwidth"><select id="event-@i" @bind="@transitions[i, 1]"><option value="">Choose event</option>@foreach (var e in Events){<option value="@e.Key">@e.Key</option>}</select></div></div>
+                <span class="transition-arrow" aria-hidden="true">→</span>
+                <div class="field"><label class="label" for="destination-@i">Destination</label><div class="select is-fullwidth"><select id="destination-@i" @bind="@transitions[i, 2]"><option value="">Choose state</option>@foreach (var q in States){<option value="@q.Key">@q.Key</option>}</select></div></div>
+            </fieldset>
+        }
     </div>
-    <div class="select">
-        <select id="trigger" @bind="@transitions[i, 1]">
-            <option value=""></option>
-            @foreach (var e in Events)
-            {
-                <option value="@e.Key"> @e.Key </option>
-            }
-        </select>
-    </div>
-    <div class="select">
-        <select id="destination" @bind="@transitions[i, 2]">
-            <option value=""></option>
-            @foreach (var q in States)
-            {
-                <option value="@q.Key"> @q.Key </option>
-            }
-        </select>
-    </div>
-    </div>
-    }
-<div class="field">
-    <label class="label" for="initial">Initial State</label>
-    <div class="select">
-        <select id="initial" @bind="@initial">
-            <option value=""></option>
-            @foreach (var q in States)
-            {
-                <option value="@q.Key"> @q.Key </option>
-            }
-        </select>
+    <div class="field">
+        <label class="label" for="initial-state">Initial state</label>
+        <div class="select is-fullwidth">
+            <select id="initial-state" @bind="@initial"><option value="">Choose state</option>@foreach (var q in States){<option value="@q.Key">@q.Key</option>}</select>
         </div>
     </div>
     <div class="field">
-        <label class="label" for="name">Automaton Name</label>
+        <label class="label" for="automaton-name">Automaton name</label>
         <div class="control">
-            <input type="text" class="input" id="name" @bind="name">
+            <input type="text" class="input" id="automaton-name" @bind="name" autocomplete="off">
         </div>
     </div>
     @if (errors.Count > 0)
@@ -66,8 +45,8 @@
         <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
     }
     <div class="buttons">
-        <button class="button is-success" @onclick="Create">Create Automaton</button>
-        <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="button is-primary" disabled="@(States.Count == 0 || Events.Count == 0)" @onclick="Create">Create automaton</button>
+        <button type="button" class="button" @onclick="OnCancel">Cancel</button>
     </div>
 </div>
 

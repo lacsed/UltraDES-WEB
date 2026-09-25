@@ -52,8 +52,8 @@
             </div>
         </div>
         <div class="buttons">
-            <button class="button is-success" @onclick="Create">Create Supervisor</button>
-            <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+            <button class="button is-primary" disabled="@(!CanCreate)" @onclick="Create">Create supervisor</button>
+            <button class="button" @onclick="OnCancel">Cancel</button>
         </div>
     </div>
 }
@@ -71,6 +71,7 @@ else
     private Dictionary<string, bool> specs;
     private string op = "";
     private bool computing = false;
+    private bool CanCreate => !string.IsNullOrWhiteSpace(op) && plants?.Any(item => item.Value) == true && specs?.Any(item => item.Value) == true;
 
     protected override void OnInitialized()
     {
@@ -78,7 +79,7 @@ else
         specs = Automata.ToDictionary(kvp => kvp.Key, kvp => false);
     }
 
-    private async void Create()
+    private async Task Create()
     {
         var p = plants.Where(kvp => kvp.Value).Select(kvp => Automata[kvp.Key]).ToArray();
         var e = specs.Where(kvp => kvp.Value).Select(kvp => Automata[kvp.Key]).ToArray();

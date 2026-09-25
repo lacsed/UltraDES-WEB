@@ -1,17 +1,18 @@
 ﻿@using global::UltraDES
 
-<div>
+<div class="compact-form">
     <div class="field">
-        <label class="label" for="name">Event Name</label>
-        <input type="text" class="input" id="name" @bind="name">
-        <p>Type the events separated by ' ; ' and tick if they are uncontrollable</p>
+        <label class="label" for="event-names">Event names</label>
+        <input type="text" class="input" id="event-names" @bind="name" @onkeyup="HandleKey" aria-describedby="event-help" autocomplete="off" autofocus>
+        <p class="help" id="event-help">Separate multiple names with semicolons, for example: start; stop; reset.</p>
     </div>
     <div class="field">
-        <label class="label"><input type="checkbox" @bind="opt"> Uncontrollable</label>
+        <label class="checkbox"><input type="checkbox" @bind="opt"> Mark all created events as uncontrollable</label>
     </div>
+    @if (!string.IsNullOrWhiteSpace(error)) { <p class="help is-danger" role="alert">@error</p> }
     <div class="buttons">
-        <button class="button is-success" @onclick="Create">Create Event</button>
-        <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="button is-primary" @onclick="Create">Create events</button>
+        <button type="button" class="button" @onclick="OnCancel">Cancel</button>
     </div>
 </div>
 
@@ -21,17 +22,28 @@
 
     private string name = "";
     private bool opt = false;
+    private string error = "";
 
     private void Create()
     {
-        string[] SubsEvents = name.Split(';');
-        foreach(var sub in SubsEvents)
+        error = "";
+        var subEvents = name.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal).ToArray();
+        if (subEvents.Length == 0)
+        {
+            error = "Enter at least one event name.";
+            return;
+        }
+        foreach(var sub in subEvents)
         {
             var e = new Event(sub, !opt ? Controllability.Controllable : Controllability.Uncontrollable);
             OnSuccess(e);
-            StateHasChanged();
         }
-        
+    }
+
+    private void HandleKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter") Create();
     }
 
 }

@@ -1,0 +1,295 @@
+@using global::UltraDES
+
+<div class="analysis-studio">
+    <div class="analysis-intro">
+        <span class="eyebrow">UltraDES analysis</span>
+        <h3>Transform and inspect automata</h3>
+        <p>Use advanced functions from the UltraDES library without leaving the workspace.</p>
+    </div>
+
+    @if (Automata.Count == 0)
+    {
+        <div class="notification is-info is-light" role="status">Create or import an automaton before running an analysis.</div>
+    }
+    else
+    {
+        <div class="analysis-form-grid">
+            <div class="field">
+                <label class="label" for="advanced-operation">Operation</label>
+                <div class="select is-fullwidth">
+                    <select id="advanced-operation" @bind="operation" @bind:after="OperationChanged">
+                        <optgroup label="Transformations">
+                            <option value="prefix">Prefix closure</option>
+                            <option value="projection">Natural projection</option>
+                            <option value="inverse">Inverse projection</option>
+                        </optgroup>
+                        <optgroup label="Analysis">
+                            <option value="regex">Regular expression</option>
+                            <option value="isomorphism">Isomorphism</option>
+                            <option value="controllability">Controllability and disabled events</option>
+                            <option value="conflict">Nonconflicting verification</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            @if (operation != "conflict")
+            {
+                <div class="field">
+                    <label class="label" for="advanced-primary">@(operation == "controllability" ? "Supervisor or specification" : "Primary automaton")</label>
+                    <div class="select is-fullwidth">
+                        <select id="advanced-primary" @bind="primary" @bind:after="PrimaryChanged">
+                            @foreach (var item in Automata)
+                            {
+                                <option value="@item.Key">@item.Key</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            }
+
+            @if (operation is "isomorphism" or "controllability")
+            {
+                <div class="field">
+                    <label class="label" for="advanced-secondary">@(operation == "isomorphism" ? "Comparison automaton" : "Plant automaton")</label>
+                    <div class="select is-fullwidth">
+                        <select id="advanced-secondary" @bind="secondary">
+                            <option value="">Choose an automaton</option>
+                            @foreach (var item in Automata)
+                            {
+                                <option value="@item.Key">@item.Key</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            }
+
+            @if (IsTransformation)
+            {
+                <div class="field">
+                    <label class="label" for="advanced-result-name">Result name</label>
+                    <input id="advanced-result-name" class="input" @bind="resultName" autocomplete="off" />
+                </div>
+            }
+        </div>
+
+        @if (operation is "projection" or "inverse")
+        {
+            <fieldset class="analysis-options">
+                <legend>@(operation == "projection" ? "Events to hide" : "Events to add")</legend>
+                <p>@(operation == "projection" ? "Selected events are projected out of the automaton." : "Selected workspace events are added through inverse projection.")</p>
+                <div class="analysis-chip-grid">
+                    @foreach (var item in AvailableEvents())
+                    {
+                        var eventName = item.ToString();
+                        <label class="analysis-check">
+                            <input type="checkbox" checked="@selectedEvents.Contains(eventName)" @onchange="args => SetEvent(eventName, args.Value)" />
+                            <span>@eventName</span>
+                            <small>@(item.IsControllable ? "controllable" : "uncontrollable")</small>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+        }
+
+        @if (operation == "conflict")
+        {
+            <fieldset class="analysis-options">
+                <legend>Automata to compose</legend>
+                <p>Select at least two automata for the nonconflicting verification.</p>
+                <div class="analysis-chip-grid">
+                    @foreach (var item in Automata)
+                    {
+                        <label class="analysis-check">
+                            <input type="checkbox" checked="@selectedAutomata.Contains(item.Key)" @onchange="args => SetAutomaton(item.Key, args.Value)" />
+                            <span>@item.Key</span>
+                            <small>@item.Value.Size states</small>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="notification is-danger is-light" role="alert">@error</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(result))
+        {
+            <section class="analysis-result" aria-live="polite">
+                <span class="analysis-result-icon"><i class="fas fa-check"></i></span>
+                <div><strong>@resultTitle</strong><p>@result</p></div>
+            </section>
+        }
+
+        <div class="buttons analysis-actions">
+            <button type="button" class="button is-primary" disabled="@busy" @onclick="Run">
+                <i class="fas @(busy ? "fa-circle-notch fa-spin" : "fa-flask")"></i>
+                <span>@(busy ? "Computing…" : "Run operation")</span>
+            </button>
+            <button type="button" class="button" disabled="@busy" @onclick="OnCancel">Close</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
+    [Parameter, EditorRequired] public EventCallback<DeterministicFiniteAutomaton> OnAutomatonCreated { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
+
+    private readonly HashSet<string> selectedEvents = new(StringComparer.Ordinal);
+    private readonly HashSet<string> selectedAutomata = new(StringComparer.Ordinal);
+    private string operation = "prefix";
+    private string primary = "";
+    private string secondary = "";
+    private string resultName = "";
+    private string result = "";
+    private string resultTitle = "Result";
+    private string error = "";
+    private bool busy;
+    private bool initialized;
+
+    private bool IsTransformation => operation is "prefix" or "projection" or "inverse";
+
+    protected override void OnParametersSet()
+    {
+        if (initialized || Automata.Count == 0) return;
+        primary = Automata.Keys.First();
+        secondary = Automata.Keys.Skip(1).FirstOrDefault() ?? "";
+        selectedAutomata.UnionWith(Automata.Keys.Take(2));
+        initialized = true;
+        PrimaryChanged();
+    }
+
+    private void PrimaryChanged()
+    {
+        selectedEvents.Clear();
+        resultName = operation switch
+        {
+            "projection" => $"Proj({primary})",
+            "inverse" => $"InvProj({primary})",
+            _ => $"Prefix({primary})"
+        };
+        ResetResult();
+    }
+
+    private void OperationChanged()
+    {
+        selectedEvents.Clear();
+        ResetResult();
+    }
+
+    private void ResetResult()
+    {
+        error = "";
+        result = "";
+        if (IsTransformation && !string.IsNullOrWhiteSpace(primary))
+            resultName = operation switch
+            {
+                "projection" => $"Proj({primary})",
+                "inverse" => $"InvProj({primary})",
+                _ => $"Prefix({primary})"
+            };
+    }
+
+    private IEnumerable<AbstractEvent> AvailableEvents() => operation == "inverse"
+        ? Automata.Values.SelectMany(item => item.Events).Distinct()
+            .Where(item => !Automata.TryGetValue(primary, out var source) || !source.Events.Any(existing => existing.Equals(item)))
+            .OrderBy(item => item.ToString(), StringComparer.Ordinal)
+        : Automata.TryGetValue(primary, out var automaton)
+            ? automaton.Events.OrderBy(item => item.ToString(), StringComparer.Ordinal)
+            : [];
+
+    private void SetEvent(string name, object value)
+    {
+        if (value is true) selectedEvents.Add(name); else selectedEvents.Remove(name);
+    }
+
+    private void SetAutomaton(string name, object value)
+    {
+        if (value is true) selectedAutomata.Add(name); else selectedAutomata.Remove(name);
+    }
+
+    private async Task Run()
+    {
+        error = "";
+        result = "";
+        busy = true;
+        await Task.Yield();
+        try
+        {
+            DeterministicFiniteAutomaton source = null;
+            if (operation != "conflict" && !Automata.TryGetValue(primary, out source))
+                throw new InvalidOperationException("Choose a primary automaton.");
+
+            switch (operation)
+            {
+                case "prefix":
+                    await ReturnAutomaton(source!.PrefixClosure);
+                    break;
+                case "projection":
+                    await ReturnAutomaton(source!.Projection(SelectedEventObjects(source.Events)));
+                    break;
+                case "inverse":
+                    await ReturnAutomaton(source!.InverseProjection(SelectedEventObjects(AvailableEvents())));
+                    break;
+                case "regex":
+                    resultTitle = $"Regular expression for {primary}";
+                    result = source!.ToRegularExpression.ToString();
+                    break;
+                case "isomorphism":
+                    RequireSecondary();
+                    var isomorphic = DeterministicFiniteAutomaton.Isomorphism(source!, Automata[secondary]);
+                    resultTitle = isomorphic ? "Automata are isomorphic" : "Automata are not isomorphic";
+                    result = isomorphic
+                        ? "They have the same transition structure up to state naming."
+                        : "Their transition structures are different.";
+                    break;
+                case "controllability":
+                    RequireSecondary();
+                    var check = source!.ControllabilityAndDisabledEvents([Automata[secondary]], true);
+                    resultTitle = $"Controllability: {check.Item1}";
+                    var disabled = check.Item2.Sum(item => item.Value.Count);
+                    result = disabled == 0
+                        ? "No disabled-event violations were found."
+                        : $"UltraDES found {disabled} disabled-event occurrence(s) across {check.Item2.Count} state(s).";
+                    break;
+                case "conflict":
+                    if (selectedAutomata.Count < 2) throw new InvalidOperationException("Select at least two automata.");
+                    var conflicting = DeterministicFiniteAutomaton.IsConflicting(selectedAutomata.Select(name => Automata[name]));
+                    resultTitle = conflicting ? "Conflict detected" : "Automata are nonconflicting";
+                    result = conflicting
+                        ? "The composed behavior is blocking. Review the marked behavior and shared events."
+                        : "The selected automata preserve nonblocking marked behavior when composed.";
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private IEnumerable<AbstractEvent> SelectedEventObjects(IEnumerable<AbstractEvent> events)
+    {
+        var values = events.Where(item => selectedEvents.Contains(item.ToString())).ToArray();
+        if (values.Length == 0) throw new InvalidOperationException("Select at least one event for the alphabet.");
+        return values;
+    }
+
+    private void RequireSecondary()
+    {
+        if (string.IsNullOrWhiteSpace(secondary) || !Automata.ContainsKey(secondary))
+            throw new InvalidOperationException("Choose the second automaton.");
+    }
+
+    private async Task ReturnAutomaton(DeterministicFiniteAutomaton automaton)
+    {
+        if (string.IsNullOrWhiteSpace(resultName)) throw new InvalidOperationException("Enter a result name.");
+        await OnAutomatonCreated.InvokeAsync(automaton.Rename(resultName.Trim()));
+    }
+}

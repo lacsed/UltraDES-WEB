@@ -125,7 +125,7 @@ else
         statePairs = Automaton.States.SelectMany(st1 => Automaton.States.Select(st2 => (st1, st2))).ToDictionary(st => st, st => false);
     }
 
-    public async void Create()
+    public async Task Create()
     {
         try
         {

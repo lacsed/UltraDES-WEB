@@ -1,17 +1,18 @@
 ﻿@using global::UltraDES
 
-<div>
+<div class="compact-form">
     <div class="field">
-        <label class="label" for="name">State Name</label>
-        <input type="text" class="input" id="name" @bind="name">
-        <p>Type the states separated by ' ; ' and tick if they are marked</p>
+        <label class="label" for="state-names">State names</label>
+        <input type="text" class="input" id="state-names" @bind="name" @onkeyup="HandleKey" aria-describedby="state-help" autocomplete="off" autofocus>
+        <p class="help" id="state-help">Separate multiple names with semicolons, for example: idle; working; done.</p>
     </div>
     <div class="field">
-        <label class="label"><input type="checkbox" @bind="opt"> Marked</label>
+        <label class="checkbox"><input type="checkbox" @bind="opt"> Mark all created states</label>
     </div>
+    @if (!string.IsNullOrWhiteSpace(error)) { <p class="help is-danger" role="alert">@error</p> }
     <div class="buttons">
-        <button class="button is-success" @onclick="Create">Create State</button>
-        <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="button is-primary" @onclick="Create">Create states</button>
+        <button type="button" class="button" @onclick="OnCancel">Cancel</button>
     </div>
 </div>
 
@@ -21,16 +22,28 @@
 
     private string name = "";
     private bool opt = false;
+    private string error = "";
 
     private void Create()
     {
-        string[] SubStates = name.Split(";"); 
-        foreach(var sub in SubStates)
+        error = "";
+        var subStates = name.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal).ToArray();
+        if (subStates.Length == 0)
+        {
+            error = "Enter at least one state name.";
+            return;
+        }
+        foreach(var sub in subStates)
         {
             var q = new State(sub, opt ? Marking.Marked : Marking.Unmarked);
             OnSuccess(q);
-            StateHasChanged();
         }
+    }
+
+    private void HandleKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter") Create();
     }
 
 }

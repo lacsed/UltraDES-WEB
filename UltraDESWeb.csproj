@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <Compile Remove="UltraDESWeb.Tests/**/*.cs" />
+    <Content Remove="UltraDESWeb.Tests/**" />
+    <None Remove="UltraDESWeb.Tests/**" />
   </ItemGroup>
 
 </Project>

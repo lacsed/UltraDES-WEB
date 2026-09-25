@@ -26,12 +26,13 @@
                     <option value="coac">Coaccessible Part</option>
                     <option value="trim">Trim</option>
                     <option value="simp">Simplify States Name</option>
+                    <option value="prefix">Prefix Closure</option>
                 </select>
             </div>
         </div>
         <div class="buttons">
-            <button class="button is-success" @onclick="Create">Apply Operation</button>
-            <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+            <button class="button is-primary" disabled="@(string.IsNullOrWhiteSpace(G1) || string.IsNullOrWhiteSpace(op))" @onclick="Create">Apply operation</button>
+            <button class="button" @onclick="OnCancel">Cancel</button>
         </div>
     </div>
 }
@@ -54,7 +55,7 @@ else
     private string op;
     private bool computing = false;
 
-    public async void Create()
+    public async Task Create()
     {
         try
         {
@@ -68,6 +69,7 @@ else
                 "coac" => Automata[G1].CoaccessiblePart.Rename($"Coac({G1})"),
                 "trim" => Automata[G1].Trim.Rename($"Trim({G1})"),
                 "simp" => Automata[G1].SimplifyStatesName().Rename($"Simp({G1})"),
+                "prefix" => Automata[G1].PrefixClosure.Rename($"Prefix({G1})"),
                 _ => null
 
             };

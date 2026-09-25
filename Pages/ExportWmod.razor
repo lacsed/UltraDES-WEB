@@ -56,7 +56,7 @@
         specs = Automata.ToDictionary(kvp => kvp.Key, kvp => false);
     }
 
-    private async void Export()
+    private async Task Export()
     {
         var p = plants.Where(kvp => kvp.Value).Select(kvp => Automata[kvp.Key]).ToArray();
         var e = specs.Where(kvp => kvp.Value).Select(kvp => Automata[kvp.Key]).ToArray();

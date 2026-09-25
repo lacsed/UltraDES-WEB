@@ -28,6 +28,21 @@ public sealed class PetriNetWorkspaceTests
     }
 
     [Fact]
+    public void Analysis_exposes_incidence_and_reachability_results()
+    {
+        var (net, marking) = PetriNetWorkspace.Build(ResourceNet("Analysis"));
+
+        var matrix = net.IncidenceMatrix(out var placeIndex, out var transitionIndex);
+        var free = net.Places.Single(place => place.ToString() == "free");
+        var busy = net.Places.Single(place => place.ToString() == "busy");
+        var enter = net.Transitions.Single(transition => transition.ToString() == "enter");
+
+        Assert.Equal(1, matrix[placeIndex[free], transitionIndex[enter]]);
+        Assert.Equal(-1, matrix[placeIndex[busy], transitionIndex[enter]]);
+        Assert.NotEmpty(net.ReachabilityTree(marking));
+    }
+
+    [Fact]
     public void Build_rejects_arcs_between_nodes_of_the_same_kind()
     {
         var draft = ResourceNet("Invalid") with

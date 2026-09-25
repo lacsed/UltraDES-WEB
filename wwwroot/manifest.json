@@ -1,10 +1,12 @@
 {
-  "name": "UltraDES App",
-  "short_name": "UltraDES App",
+  "name": "UltraDES — Discrete Event Systems Studio",
+  "short_name": "UltraDES",
+  "description": "Model, analyze, and control automata and Petri nets.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#287ef2",
+  "background_color": "#f3f6fb",
+  "theme_color": "#1749b3",
   "icons": [
     {
       "src": "icon-512.png",

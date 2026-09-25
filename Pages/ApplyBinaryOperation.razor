@@ -39,8 +39,8 @@
             </div>
         </div>
         <div class="buttons">
-            <button class="button is-success" @onclick="Create">Apply Operation</button>
-            <button class="button is-danger" @onclick="OnCancel">Cancel</button>
+            <button class="button is-primary" disabled="@(string.IsNullOrWhiteSpace(G1) || string.IsNullOrWhiteSpace(G2) || string.IsNullOrWhiteSpace(op))" @onclick="Create">Apply operation</button>
+            <button class="button" @onclick="OnCancel">Cancel</button>
         </div>
     </div>
 }
@@ -63,16 +63,25 @@ else
     private string op;
     private bool computing = false;
 
-    public void Create()
+    public async Task Create()
     {
-        var G12 = op switch
+        try
         {
-            "pc" => Automata[G1].ParallelCompositionWith(Automata[G2]),
-            "pd" => Automata[G1].ProductWith(Automata[G2]),
-            _ => null
+            computing = true;
+            await Task.Yield();
+            var G12 = op switch
+            {
+                "pc" => Automata[G1].ParallelCompositionWith(Automata[G2]),
+                "pd" => Automata[G1].ProductWith(Automata[G2]),
+                _ => null
             };
-
-        if (G12 != null) OnSuccess(G12);
+            if (G12 != null) OnSuccess(G12);
+        }
+        catch (Exception ex)
+        {
+            computing = false;
+            JsRuntime.Alert($"Error: {ex.Message}");
+        }
     }
 
 }
