@@ -315,7 +315,11 @@
                             </button>
                             <button type="button" @onclick="() => SaveAutomaton(selected)">
                                 <i class="fas fa-download" aria-hidden="true"></i>
-                                <span><strong>Download</strong><small>Save this automaton as JSON</small></span>
+                                <span><strong>Download JSON</strong><small>UltraDES JSON format</small></span>
+                            </button>
+                            <button type="button" @onclick="() => SaveXmlAutomaton(selected)">
+                                <i class="fas fa-download" aria-hidden="true"></i>
+                                <span><strong>Download XML</strong><small>XML format</small></span>
                             </button>
                         </div>
                     </article>
@@ -364,6 +368,7 @@
                                             <button type="button" @onclick="() => SummaryAutomaton(G.Value)" title="Summary"><i class="fas fa-list"></i><span>Summary</span></button>
                                             <button type="button" @onclick="() => OpenVisualLayout(G.Value)" disabled="@(!CanOpenVisualLayout(G.Value))" title="@VisualLayoutTitle(G.Value)"><i class="fas fa-edit"></i><span>Layout</span></button>
                                             <button type="button" @onclick="() => SaveAutomaton(G.Value)" title="Download"><i class="fas fa-download"></i><span>Save</span></button>
+                                            <button type="button" @onclick="() => SaveXmlAutomaton(G.Value)" title="Download XML"><i class="fas fa-file-code"></i><span>XML</span></button>
                                             <button type="button" class="is-danger" @onclick="() => RemoveAutomaton(G.Key)" title="Delete"><i class="fas fa-trash"></i><span>Delete</span></button>
                                         </div>
                                     </article>
@@ -756,6 +761,11 @@
     private void SaveAutomaton(DeterministicFiniteAutomaton G)
     {
         JsRuntime.SaveFile($"{G.Name}.json", DeterministicFiniteAutomaton.ToJsonString(G));
+    }
+
+    private void SaveXmlAutomaton(DeterministicFiniteAutomaton G)
+    {
+        JsRuntime.SaveFile($"{G.Name}.xml", G.ToXML);
     }
 
     private async Task LoadJsonAutomaton(string name)
