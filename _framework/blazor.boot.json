@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "UltraDESWeb",
   "resources": {
-    "hash": "sha256-jn4Bvk5uS2hnA904j5bVUa1xZrHo0lVxnPcyO5cEGZs=",
+    "hash": "sha256-kh5YXoQmv3RbfYkeJLOVqVnIAngpbJoBjQoBjG+MZHw=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-9NoXeVUo4WNrEqrjAp/y3Yc8NmDcymQkzMGOIbIpGio="
     },
@@ -83,7 +83,7 @@
       "System.wasm": "sha256-1luKvPmMGcjC9JPzmrtFC2En/NM4Qzkg7Syt5bEUqZY=",
       "netstandard.wasm": "sha256-foBcP4wG0dzkeaQEvsV0BpsXiTFUckfFFicMRXAsCHI=",
       "System.Private.CoreLib.wasm": "sha256-0FtVerJDfKAB7R6Qbtxf6pBK6gGMdQv+2Rukq7VmKWY=",
-      "UltraDESWeb.wasm": "sha256-G/eSm84iWk8J99y1XGwNdA/bNanc83gvHovCFLWzyPU="
+      "UltraDESWeb.wasm": "sha256-npwU62OTW5buz0Q8bMruj0Y7R9AzhftjpI+MMYP28GI="
     }
   },
   "cacheBootResources": true,
