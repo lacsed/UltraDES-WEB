@@ -1,0 +1,134 @@
+@using global::UltraDES
+@inject StructuredTextGenerator Generator
+@inject IJSRuntime JsRuntime
+
+<div class="analysis-studio structured-text-studio">
+    <div class="analysis-intro">
+        <span class="eyebrow">PLC code generation</span>
+        <h3>Generate Structured Text</h3>
+        <p>Select the plants that execute actions and the supervisors that disable controllable events.</p>
+    </div>
+
+    <div class="notification is-info is-light">
+        Shared events synchronize all participating plants. Supervisors only observe events and disable
+        controllable events in their alphabet when no transition is defined in their current state.
+        Keep enabled self-loops in the source supervisors.
+    </div>
+
+    <div class="st-selection-grid">
+        <fieldset class="analysis-options">
+            <legend>Plants</legend>
+            <p>State actions and controllable transition actions.</p>
+            <div class="analysis-chip-grid">
+                @foreach (var item in Automata.OrderBy(item => item.Key, StringComparer.Ordinal))
+                {
+                    <label class="analysis-check">
+                        <input type="checkbox" checked="@plants.Contains(item.Key)"
+                               @onchange="args => SelectRole(item.Key, args.Value, true)" />
+                        <span>@item.Key</span><small>@item.Value.Size states</small>
+                    </label>
+                }
+            </div>
+        </fieldset>
+        <fieldset class="analysis-options">
+            <legend>Supervisors</legend>
+            <p>Internal state and controllable-event disabling only.</p>
+            <div class="analysis-chip-grid">
+                @foreach (var item in Automata.OrderBy(item => item.Key, StringComparer.Ordinal))
+                {
+                    <label class="analysis-check">
+                        <input type="checkbox" checked="@supervisors.Contains(item.Key)"
+                               @onchange="args => SelectRole(item.Key, args.Value, false)" />
+                        <span>@item.Key</span><small>@item.Value.Size states</small>
+                    </label>
+                }
+            </div>
+        </fieldset>
+    </div>
+    <p class="st-selection-summary" role="status">@plants.Count plant(s) · @supervisors.Count supervisor(s). Each automaton has one role.</p>
+
+    <div class="field">
+        <label class="label" for="st-program-name">Program name</label>
+        <input class="input" id="st-program-name" maxlength="40" @bind="programName" @bind:event="oninput" @bind:after="ClearResult" autocomplete="off" />
+        <p class="help">The generated PROGRAM uses the prefix PRG_. The download uses the .st extension.</p>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="notification is-danger is-light" role="alert">@error</div>
+    }
+    <div class="buttons analysis-actions">
+        <button type="button" class="button is-primary" disabled="@busy" @onclick="Generate">
+            <i class="fas @(busy ? "fa-circle-notch fa-spin" : "fa-code")" aria-hidden="true"></i>
+            <span>@(busy ? "Generating…" : "Generate code")</span>
+        </button>
+        <button type="button" class="button" disabled="@busy" @onclick="OnCancel">Close</button>
+    </div>
+
+    @if (result is not null)
+    {
+        <section class="st-result" aria-label="Structured Text result">
+            <p role="status"><strong>Code generated:</strong> @result.PlantCount plant(s), @result.SupervisorCount supervisor(s), @result.EventCount event(s).</p>
+            <p>Fill the TODOs for plant state actions, controllable-event actions and sensor/output mapping.
+                Controllable events run automatically when ready and permitted; use <code>req_</code> to add demand conditions.</p>
+            <p>One event runs per scan, with uncontrollable events first and fixed priority by event name.
+                Import each POU into your PLC IDE and adapt the template to its dialect.</p>
+            @foreach (var warning in result.Warnings)
+            {
+                <div class="notification is-warning is-light" role="status">@warning</div>
+            }
+            <div class="buttons">
+                <button type="button" class="button is-success" @onclick="Download"><i class="fas fa-download" aria-hidden="true"></i><span>Download .st</span></button>
+            </div>
+            <pre class="st-code" tabindex="0" aria-label="Generated Structured Text"><code>@result.Code</code></pre>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
+    [Parameter] public string InitialPlantName { get; set; } = "";
+    [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
+
+    private readonly HashSet<string> plants = new(StringComparer.Ordinal);
+    private readonly HashSet<string> supervisors = new(StringComparer.Ordinal);
+    private string programName = "SCT_Main";
+    private string error = "";
+    private bool busy;
+    private StructuredTextGenerator.Result result;
+
+    protected override void OnInitialized()
+    {
+        if (Automata.ContainsKey(InitialPlantName)) plants.Add(InitialPlantName);
+    }
+
+    private void SelectRole(string name, object value, bool isPlant)
+    {
+        var selected = isPlant ? plants : supervisors;
+        var other = isPlant ? supervisors : plants;
+        if (value is true) { selected.Add(name); other.Remove(name); }
+        else selected.Remove(name);
+        ClearResult();
+    }
+
+    private void ClearResult() { result = null; error = ""; }
+
+    private async Task Generate()
+    {
+        ClearResult();
+        busy = true;
+        await Task.Yield();
+        try
+        {
+            result = Generator.Generate(plants.Select(name => Automata[name]), supervisors.Select(name => Automata[name]), programName);
+        }
+        catch (ArgumentException ex) { error = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task Download()
+    {
+        if (result is null) return;
+        try { await JsRuntime.InvokeVoidAsync("saveFile", $"{programName}.st", result.Code); }
+        catch (JSException) { error = "The download could not be started. Try again or copy the code from the preview."; }
+    }
+}

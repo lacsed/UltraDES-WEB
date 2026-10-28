@@ -5,6 +5,7 @@
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
     <UserSecretsId>70565597-a983-49b4-aca7-3b2526e94910</UserSecretsId>
     <OutputType>Exe</OutputType>
+    <DefaultItemExcludes>$(DefaultItemExcludes);test-results/**;playwright-report/**;.cache/**;node_modules/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

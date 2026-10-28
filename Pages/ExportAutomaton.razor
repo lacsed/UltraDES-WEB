@@ -1,0 +1,168 @@
+@using global::UltraDES
+@inject AutomatonExportService Exporter
+@inject IJSRuntime JsRuntime
+@inject AutomatonLayoutService LayoutService
+
+<div class="analysis-studio automaton-export">
+    <div class="analysis-intro">
+        <span class="eyebrow">Automaton export</span>
+        <h3>Choose a file format</h3>
+        <p>Download a model, a drawing or generate PLC code from your workspace.</p>
+    </div>
+    @if (Automata.Count == 0)
+    {
+        <div class="notification is-info is-light" role="status">Create or import an automaton before exporting.</div>
+    }
+    else
+    {
+        <div class="analysis-form-grid">
+            <div class="field">
+                <label class="label" for="export-automaton">Automaton</label>
+                <div class="select is-fullwidth">
+                    <select id="export-automaton" disabled="@busy" @bind="selected" @bind:after="ResetStatus">
+                        @foreach (var item in Automata.OrderBy(item => item.Key, StringComparer.Ordinal))
+                        {
+                            <option value="@item.Key">@item.Key</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="export-format">Format</label>
+                <div class="select is-fullwidth">
+                    <select id="export-format" disabled="@busy" @bind="format" @bind:after="ResetStatus">
+                        <optgroup label="Automaton models">
+                            <option value="json">JSON (.json)</option>
+                            <option value="xml">XML (.xml)</option>
+                            <option value="ads">ADS (.ads)</option>
+                            <option value="fsm">FSM (.fsm)</option>
+                            <option value="fm">FM (.fm)</option>
+                            <option value="wmod">WMOD / Supremica (.wmod)</option>
+                        </optgroup>
+                        <optgroup label="Drawings">
+                            <option value="dot">DOT / Graphviz (.dot)</option>
+                            <option value="svg">SVG (.svg)</option>
+                            <option value="png">PNG (.png)</option>
+                        </optgroup>
+                        <optgroup label="PLC code">
+                            <option value="st">Structured Text (.st)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="notification is-info is-light export-description" role="note">@Description</div>
+        @if (format == "wmod")
+        {
+            <div class="field">
+                <label class="label" for="export-wmod-role">WMOD component role</label>
+                <div class="select">
+                    <select id="export-wmod-role" disabled="@busy" @bind="wmodRole" @bind:after="ResetStatus">
+                        <option value="plant">Plant</option>
+                        <option value="specification">Specification</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="button is-text" disabled="@busy" @onclick="OnWmod">Export multiple automata as WMOD</button>
+        }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="notification is-danger is-light" role="alert">@error</div>
+        }
+        @if (!string.IsNullOrEmpty(status))
+        {
+            <p class="export-status" role="status">@status</p>
+        }
+        @if (confirmImage)
+        {
+            <div class="notification is-warning is-light" role="alert">
+                <p>This automaton has exactly <strong>@Automata[selected].States.Count() states</strong>. Rendering the drawing may take a long time.</p>
+                <div class="buttons">
+                    <button type="button" class="button is-warning" @onclick="() => Download(true)">Render and download anyway</button>
+                    <button type="button" class="button" @onclick="() => confirmImage = false">Cancel rendering</button>
+                </div>
+            </div>
+        }
+        <div class="buttons analysis-actions">
+            @if (format == "st")
+            {
+                <button type="button" class="button is-primary" @onclick="() => OnStructuredText.InvokeAsync(selected)">Configure plants and supervisors</button>
+            }
+            else
+            {
+                <button type="button" class="button is-primary" disabled="@(busy || confirmImage)" @onclick="() => Download()">
+                    <i class="fas @(busy ? "fa-circle-notch fa-spin" : "fa-download")" aria-hidden="true"></i>
+                    <span>@(busy ? "Exporting…" : "Download file")</span>
+                </button>
+            }
+            <button type="button" class="button" disabled="@busy" @onclick="OnCancel">Close</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
+    [Parameter] public string InitialAutomatonName { get; set; } = "";
+    [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnWmod { get; set; }
+    [Parameter, EditorRequired] public EventCallback<string> OnStructuredText { get; set; }
+    private string selected = "";
+    private string format = "json";
+    private string wmodRole = "plant";
+    private string status = "";
+    private string error = "";
+    private bool busy;
+    private bool confirmImage;
+
+    protected override void OnInitialized() => selected = Automata.ContainsKey(InitialAutomatonName)
+        ? InitialAutomatonName : Automata.Keys.OrderBy(name => name, StringComparer.Ordinal).FirstOrDefault() ?? "";
+
+    private string Description => format switch
+    {
+        "json" => "UltraDES JSON: states, transitions, event names, marking and controllability. Can be imported back into this workspace.",
+        "xml" => "UltraDES XML: states, transitions, event names, marking and controllability.",
+        "ads" => "ADS renumbers states and events. Controllable events receive odd numbers and uncontrollable events receive even numbers; original labels are not retained.",
+        "fsm" => "FSM model with states, transitions, marking and event controllability.",
+        "fm" => "FM model with initial/final states and transitions. This format does not store event controllability.",
+        "wmod" => "Supremica/Waters module. Export this automaton as a plant or specification, or select several models for a combined module.",
+        "dot" => "Graphviz source for the automaton drawing; no rendering is needed to download it.",
+        "svg" => "Vector drawing of the automaton, suitable for scaling and editing.",
+        "png" => "Raster drawing of the automaton as a PNG image.",
+        "st" => "Generate a Structured Text template by selecting plants and supervisors. The selected automaton will start as a plant; its role can be changed.",
+        _ => ""
+    };
+
+    private void ResetStatus() { status = ""; error = ""; confirmImage = false; }
+
+    private async Task Download(bool confirmed = false)
+    {
+        if (busy || !Automata.TryGetValue(selected, out var source)) return;
+        ResetStatus();
+        if (format is "svg" or "png" && !confirmed && source.States.Count() > 100)
+        { confirmImage = true; return; }
+        busy = true;
+        await Task.Yield();
+        try
+        {
+            if (format is "svg" or "png")
+            {
+                if (LayoutService.CanConvert(source))
+                {
+                    var layout = await LayoutService.CreateAsync(source);
+                    await using var module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/automaton-editor.js");
+                    var drawing = await module.InvokeAsync<string>("renderAutomatonSvg", AutomatonLayoutService.ToDiagram(source), layout);
+                    await JsRuntime.InvokeVoidAsync("downloadRenderedAutomatonImage", AutomatonExportService.FileName(source.Name, format), drawing, format);
+                }
+                else await JsRuntime.InvokeVoidAsync("exportAutomatonImage", AutomatonExportService.FileName(source.Name, format), source.ToDotCode, format);
+            }
+            else
+            {
+                var file = Exporter.Export(source, format, wmodRole == "specification");
+                await JsRuntime.InvokeVoidAsync("saveFile", file.FileName, file.Content, file.ContentType);
+            }
+            status = "Download started.";
+        }
+        catch (Exception ex) { error = $"Export failed: {ex.Message}"; }
+        finally { busy = false; }
+    }
+}

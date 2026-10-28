@@ -2,6 +2,8 @@
 @implements IAsyncDisposable
 @inject AutomatonDraftValidator Validator
 @inject IJSRuntime JS
+@inject AutomatonLayoutService LayoutService
+@using System.Threading
 
 <div class="visual-automaton-editor">
     @if (!LayoutOnly)
@@ -21,8 +23,8 @@
     <div class="visual-editor-help">
         <i class="fas fa-lightbulb" aria-hidden="true"></i>
         <p>
-        @if (LayoutOnly) { <text>Drag states and transition handles to arrange the diagram; their positions snap to the grid. Use the mouse wheel to zoom and drag empty space to pan. Labels follow their transitions automatically. The automaton structure is read-only.</text> }
-        else { <text>Double-click (or double-tap) empty space to add a state. States and transition handles snap to the grid. Use “Add initial” or “Set initial” to define the initial state. Select a state or transition and type to edit it. Hold Shift and drag between states with a mouse; on touch, hold a state and drag to another. Right-click or touch and hold an item for more options.</text> }
+        @if (LayoutOnly) { <text>Drag a state: its arrows follow and keep their curvature. Drag a transition line or its round handle to bend it; drag a label to reposition it. Scroll to zoom and drag empty space to pan. Hold Alt for free movement. The automaton structure is read-only.</text> }
+        else { <text>Double-click empty space to add a state; double-click a state to toggle its marking. Select an item and type to edit its label. Shift-drag between states (or use Transition) to create arrows. Drag a line or its round handle to bend it; drag a label to move it. Scroll to zoom, drag empty space to pan, and hold Alt to bypass snapping.</text> }
         </p>
     </div>
 
@@ -31,10 +33,10 @@
         <div class="visual-editor-actions" role="toolbar" aria-label="Automaton drawing tools">
             <div class="visual-tool-group">
                 <span class="visual-tool-label">Draw</span>
-                <button class="visual-tool @(activeTool == "select" ? "is-active" : "")" type="button" @onclick='() => SetTool("select")' title="Select or move"><i class="fas fa-mouse-pointer"></i><span>Select</span></button>
-                <button class="visual-tool @(activeTool == "add-state" ? "is-active" : "")" type="button" @onclick='() => SetTool("add-state")' title="Add state"><i class="far fa-circle"></i><span>State</span></button>
-                <button class="visual-tool @(activeTool == "add-initial" ? "is-active" : "")" type="button" @onclick='() => SetTool("add-initial")' title="Add initial state"><i class="fas fa-bullseye"></i><span>Initial</span></button>
-                <button class="visual-tool @(activeTool == "transition" ? "is-active" : "")" type="button" @onclick='() => SetTool("transition")' title="Add transition"><i class="fas fa-long-arrow-alt-right"></i><span>Transition</span></button>
+                <button class="visual-tool @(activeTool == "select" ? "is-active" : "")" data-tool="select" type="button" @onclick='() => SetTool("select")' title="Select or move"><i class="fas fa-mouse-pointer"></i><span>Select</span></button>
+                <button class="visual-tool @(activeTool == "add-state" ? "is-active" : "")" data-tool="add-state" type="button" @onclick='() => SetTool("add-state")' title="Add state"><i class="far fa-circle"></i><span>State</span></button>
+                <button class="visual-tool @(activeTool == "add-initial" ? "is-active" : "")" data-tool="add-initial" type="button" @onclick='() => SetTool("add-initial")' title="Add initial state"><i class="fas fa-bullseye"></i><span>Initial</span></button>
+                <button class="visual-tool @(activeTool == "transition" ? "is-active" : "")" data-tool="transition" type="button" @onclick='() => SetTool("transition")' title="Add transition"><i class="fas fa-long-arrow-alt-right"></i><span>Transition</span></button>
             </div>
             <div class="visual-tool-group">
                 <span class="visual-tool-label">Selection</span>
@@ -46,8 +48,25 @@
             </div>
         </div>
     }
-    <div class="visual-canvas-shell">
-        <div class="visual-canvas-header"><span><i class="fas fa-project-diagram"></i> Diagram</span><small>@(LayoutOnly ? "Scroll to zoom · drag to pan" : "Double-click empty space to add a state")</small></div>
+    <div class="visual-layout-controls">
+        <div class="field">
+            <label class="label" for="visual-layout-strategy">Layout strategy</label>
+            <div class="select"><select id="visual-layout-strategy" @bind="layoutStyle" disabled="@layoutBusy">
+                <option value="Automatic">Automatic — compare candidates</option>
+                <option value="Layered">Layered — left to right</option>
+                <option value="Balanced">Balanced — stress minimization</option>
+                <option value="Circular">Circular</option>
+            </select></div>
+        </div>
+        <button class="button is-link is-light" type="button" disabled="@(layoutBusy || editor is null || (LayoutOnly && !LayoutService.CanConvert(Automaton)))" @onclick="AutoLayout">Auto layout</button>
+        <button class="button" type="button" disabled="@(layoutBusy || previousLayout is null)" @onclick="UndoLayout">Undo layout</button>
+        <button class="button" type="button" disabled="@(layoutBusy || editor is null)" @onclick='() => InvokeEditor("fitDiagram")'>Fit diagram</button>
+        <label class="visual-grid-option"><input type="checkbox" @bind="snapToGrid" @bind:after="UpdateGrid" disabled="@layoutBusy" /> Snap to grid</label>
+        @if (layoutBusy) { <button class="button is-warning is-light" type="button" @onclick="() => layoutCancellation?.Cancel()">Cancel layout</button> }
+    </div>
+    @if (!string.IsNullOrEmpty(layoutStatus)) { <p class="visual-layout-status" role="status">@layoutStatus</p> }
+    <div class="visual-canvas-shell" inert="@(layoutBusy ? "" : null)" aria-busy="@(layoutBusy ? "true" : "false")">
+        <div class="visual-canvas-header"><span><i class="fas fa-project-diagram" aria-hidden="true"></i> Diagram</span><small>Drag states · drag lines to bend · drag labels to move</small></div>
         <div @ref="editorHost" class="visual-editor-canvas" tabindex="0" role="application" aria-label="Visual automaton canvas"></div>
     </div>
     @if (errors.Count > 0)
@@ -55,11 +74,11 @@
         <div class="notification is-danger" role="alert"><strong>Please correct the following:</strong><ul>@foreach (var message in errors) { <li>@message</li> }</ul></div>
     }
     <div class="buttons mt-4">
-        <button class="button is-success" type="button" @onclick="Save">@(LayoutOnly ? "Save Layout" : "Create Automaton")</button>
+        <button class="button is-success" type="button" disabled="@(layoutBusy || editor is null)" @onclick="Save">@(LayoutOnly ? "Save Layout" : "Create Automaton")</button>
         @if (LayoutOnly)
         {
-            <button class="button is-link is-light" type="button" @onclick="ExportSvg"><i class="fas fa-file-code mr-2"></i>Export SVG</button>
-            <button class="button is-link is-light" type="button" @onclick="ExportTikz"><i class="fas fa-file-alt mr-2"></i>Export TikZ</button>
+            <button class="button is-link is-light" type="button" disabled="@(layoutBusy || editor is null)" @onclick="ExportSvg"><i class="fas fa-file-code mr-2" aria-hidden="true"></i>Export SVG</button>
+            <button class="button is-link is-light" type="button" disabled="@(layoutBusy || editor is null)" @onclick="ExportTikz"><i class="fas fa-file-alt mr-2" aria-hidden="true"></i>Export TikZ</button>
         }
         <button class="button is-danger" type="button" @onclick="OnCancel">Cancel</button>
     </div>
@@ -67,6 +86,7 @@
 
 @code {
     [Parameter] public Func<DeterministicFiniteAutomaton, bool> OnSuccess { get; set; }
+    [Parameter] public Func<DeterministicFiniteAutomaton, AutomatonLayoutData, Task<bool>> OnCreatedWithLayout { get; set; }
     [Parameter] public Action OnCancel { get; set; }
     [Parameter] public IEnumerable<string> ExistingAutomatonNames { get; set; } = Array.Empty<string>();
     [Parameter] public DeterministicFiniteAutomaton Automaton { get; set; }
@@ -86,6 +106,12 @@
     private string automatonName = "";
     private string activeTool = "select";
     private readonly List<string> errors = new();
+    private AutomatonLayoutStyle layoutStyle = AutomatonLayoutStyle.Automatic;
+    private bool layoutBusy;
+    private string layoutStatus = "";
+    private CancellationTokenSource layoutCancellation;
+    private AutomatonLayoutData previousLayout;
+    private bool snapToGrid;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -103,6 +129,7 @@
             await editor.InvokeVoidAsync("loadAutomaton", new AutomatonDraft { States = states, Events = events, Transitions = transitions,
                 InitialStateId = Automaton.InitialState.ToString() }, Layout);
         }
+        StateHasChanged();
     }
 
     private async Task InvokeEditor(string operation)
@@ -117,6 +144,50 @@
     private Task EditSelection() => InvokeEditor("editSelection");
     private Task ExportSvg() => InvokeEditor("exportSvg");
     private Task ExportTikz() => InvokeEditor("exportTikz");
+    private async Task UpdateGrid() { if (editor is not null) await editor.InvokeVoidAsync("setSnapToGrid", snapToGrid); }
+    private async Task AutoLayout()
+    {
+        if (layoutBusy || editor is null) return;
+        errors.Clear();
+        var source = Automaton;
+        if (!LayoutOnly)
+        {
+            var draft = await editor.InvokeAsync<AutomatonDraft>("getDraft");
+            var validation = Validator.ValidateAndCreate(new AutomatonDraftValidator.Draft(
+                string.IsNullOrWhiteSpace(automatonName) ? "Layout preview" : automatonName,
+                draft.States.Select(q => new AutomatonDraftValidator.StateDraft(q.Id, q.Name, q.Marked)).ToArray(),
+                draft.Events.Select(e => new AutomatonDraftValidator.EventDraft(e.Id, e.Name, e.Controllable)).ToArray(),
+                draft.Transitions.Select(t => new AutomatonDraftValidator.TransitionDraft(t.SourceId, t.TargetId,
+                    t.EventNames.Select(name => draft.Events.FirstOrDefault(e => e.Name == name)?.Id ?? name).ToArray())).ToArray(), draft.InitialStateId));
+            errors.AddRange(validation.Errors);
+            if (!validation.IsValid) return;
+            source = validation.Automaton;
+        }
+        layoutBusy = true;
+        layoutStatus = "Preparing layout candidates…";
+        layoutCancellation = new CancellationTokenSource();
+        try
+        {
+            var before = await editor.InvokeAsync<AutomatonLayoutData>("getLayout");
+            var progress = new Progress<string>(message => { layoutStatus = message; _ = InvokeAsync(StateHasChanged); });
+            var result = await LayoutService.CreateAsync(source, progress, layoutCancellation.Token, layoutStyle);
+            layoutCancellation.Token.ThrowIfCancellationRequested();
+            await editor.InvokeVoidAsync("applyLayout", result);
+            previousLayout = before;
+            layoutStatus = "Layout ready. Save to keep this arrangement, or use Undo layout.";
+        }
+        catch (OperationCanceledException) { layoutStatus = "Layout cancelled; the previous arrangement was kept."; }
+        catch (Exception ex) { errors.Add(ex.Message); layoutStatus = ""; }
+        finally { layoutBusy = false; layoutCancellation.Dispose(); layoutCancellation = null; }
+    }
+
+    private async Task UndoLayout()
+    {
+        if (previousLayout is null || layoutBusy) return;
+        await editor.InvokeVoidAsync("applyLayout", previousLayout);
+        previousLayout = null;
+        layoutStatus = "Previous arrangement restored.";
+    }
     private async Task SetTool(string tool)
     {
         activeTool = tool;
@@ -140,12 +211,24 @@
                 t.EventNames.Select(name => draft.Events.FirstOrDefault(e => e.Name == name)?.Id ?? name).ToArray())).ToArray(), draft.InitialStateId);
         var result = Validator.ValidateAndCreate(validationDraft, ExistingAutomatonNames);
         errors.AddRange(result.Errors);
-        if (result.IsValid && !OnSuccess(result.Automaton!))
-            errors.Add("The automaton conflicts with the current workspace and was not added.");
+        if (result.IsValid)
+        {
+            bool created;
+            if (OnCreatedWithLayout is not null)
+            {
+                var layout = await editor.InvokeAsync<AutomatonLayoutData>("getLayout");
+                var names = draft.States.ToDictionary(q => q.Id, q => q.Name.Trim());
+                layout = layout with { Transitions = layout.Transitions.Select(t => t with { Source = names[t.Source], Target = names[t.Target] }).ToArray() };
+                created = await OnCreatedWithLayout(result.Automaton!, layout);
+            }
+            else created = OnSuccess?.Invoke(result.Automaton!) == true;
+            if (!created) errors.Add("The automaton conflicts with the current workspace and was not added.");
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
+        layoutCancellation?.Cancel();
         if (editor is not null)
         {
             try

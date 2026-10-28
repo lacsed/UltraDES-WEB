@@ -18,5 +18,7 @@ builder.Services.AddScoped<WorkspaceStorage>();
 builder.Services.AddScoped<AutomatonDraftValidator>();
 builder.Services.AddScoped<AutomatonLayoutService>();
 builder.Services.AddScoped<AutomatonSimulationService>();
+builder.Services.AddScoped<StructuredTextGenerator>();
+builder.Services.AddScoped<AutomatonExportService>();
 
 await builder.Build().RunAsync();

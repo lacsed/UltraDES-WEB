@@ -1,5 +1,7 @@
 ﻿@using global::UltraDES
 @inject IJSRuntime JSRuntime;
+@inject AutomatonLayoutService LayoutService
+@implements IAsyncDisposable
 
 @if (awaitingConfirmation)
 {
@@ -23,7 +25,7 @@ else
         <button class="button is-success" @onclick="downloadSVG">Save as SVG</button>
         <button class="button is-success" @onclick="downloadPNG">Save as PNG</button>
     </div>
-    <div style="width: 100%">
+    <div class="automaton-preview">
         @((MarkupString) svg)
     </div>
 </div>
@@ -50,6 +52,8 @@ else
     private string errorMessage = "";
     private bool awaitingConfirmation;
     private int effectiveStateCount;
+    private bool hybridDrawing;
+    private IJSObjectReference geometryModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,11 +85,18 @@ else
         try
         {
             await Task.Delay(1);
-            svg = await JSRuntime.InvokeAsync<string>("GraphViz", Automaton.ToDotCode);
+            if (LayoutService.CanConvert(Automaton))
+            {
+                var layout = await LayoutService.CreateAsync(Automaton);
+                geometryModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/automaton-editor.js");
+                svg = await geometryModule.InvokeAsync<string>("renderAutomatonSvg", AutomatonLayoutService.ToDiagram(Automaton), layout);
+                hybridDrawing = true;
+            }
+            else svg = await JSRuntime.InvokeAsync<string>("GraphViz", Automaton.ToDotCode);
         }
         catch (Exception ex)
         {
-            errorMessage = $"Graphviz could not render this automaton: {ex.Message}";
+            errorMessage = $"The automaton could not be rendered: {ex.Message}";
         }
         finally
         {
@@ -94,7 +105,19 @@ else
         }
     }
 
-    public void downloadSVG() => JSRuntime.InvokeVoidAsync("downloadSVG", "G.svg", Automaton.ToDotCode);
-    public void downloadPNG() => JSRuntime.InvokeVoidAsync("downloadPNG", "G.png", Automaton.ToDotCode);
+    public async Task downloadSVG()
+    {
+        if (hybridDrawing) await JSRuntime.InvokeVoidAsync("downloadRenderedAutomatonImage", AutomatonExportService.FileName(Automaton.Name, "svg"), svg, "svg");
+        else await JSRuntime.InvokeVoidAsync("downloadSVG", AutomatonExportService.FileName(Automaton.Name, "svg"), Automaton.ToDotCode);
+    }
+    public async Task downloadPNG()
+    {
+        if (hybridDrawing) await JSRuntime.InvokeVoidAsync("downloadRenderedAutomatonImage", AutomatonExportService.FileName(Automaton.Name, "png"), svg, "png");
+        else await JSRuntime.InvokeVoidAsync("downloadPNG", AutomatonExportService.FileName(Automaton.Name, "png"), Automaton.ToDotCode);
+    }
+    public async ValueTask DisposeAsync()
+    {
+        if (geometryModule is not null) await geometryModule.DisposeAsync();
+    }
 
 }
