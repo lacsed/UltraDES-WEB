@@ -5,11 +5,17 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
   test(`generates and downloads supervised Structured Text on ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    const shortcut = page.getByRole('button', { name: 'Structured Text Generate PLC code from plants and supervisors', exact: true });
-    await expect(shortcut).toBeDisabled();
+    const openOperations = async () => {
+      if (viewport.name === 'mobile') await page.getByRole('button', { name: 'Options', exact: true }).click();
+      else await page.getByRole('button', { name: /Operations/ }).first().hover();
+    };
+    await openOperations();
+    const generate = page.getByRole('button', { name: 'Generate Structured Text', exact: true });
+    await expect(generate).toBeDisabled();
     await page.getByRole('button', { name: 'Try an example Load the Small Factory' }).click();
-    await expect(shortcut).toBeEnabled();
-    await shortcut.click();
+    await openOperations();
+    await expect(generate).toBeEnabled();
+    await generate.click();
 
     const dialog = page.getByRole('dialog', { name: 'Generate Structured Text', exact: true });
     await dialog.getByRole('button', { name: 'Generate code', exact: true }).click();
@@ -32,11 +38,10 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     expect(source).toContain('PROGRAM PRG_Factory_Control');
     expect(source).toContain('TODO onState: actions while plant M1 is in state q0.');
     expect(source).toContain('TODO onControllableEvent: a2');
-    expect(source).toContain('dis_E2_a2 := S1_E.dis_E2_a2;');
+    expect(source).toContain('dis_E2_a2 := NOT ((S1_E_q = 0));');
     expect(source).not.toContain('dis_E3_b1');
-    const supervisor = source!.match(/FUNCTION_BLOCK FB_S1_E\n([\s\S]*?)END_FUNCTION_BLOCK/)![1];
-    expect(supervisor).not.toContain('TODO');
-    expect(supervisor).not.toContain('act_');
+    expect(source).toContain('S1_E_q : DINT := 0;');
+    expect(source).not.toContain('FUNCTION_BLOCK');
 
     const downloadPromise = page.waitForEvent('download');
     await result.getByRole('button', { name: 'Download .st', exact: true }).click();

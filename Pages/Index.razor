@@ -37,7 +37,6 @@
                     <button type="button" @onclick="() => OpenPage(Page.CreateEvent)" class="is-mobile dropdown-item">Create Event</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateVisualAutomaton)" class="is-mobile dropdown-item">Create Visual Automaton</button>
-                    <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                 </div>
             </div>
         </div>
@@ -55,7 +54,6 @@
                     <button type="button" @onclick="OpenSimulation" class="is-mobile dropdown-item">Simulate Automata</button>
                     <button type="button" @onclick="() => OpenPage(Page.GenerateStructuredText)" class="is-mobile dropdown-item">Generate Structured Text</button>
                     <button type="button" @onclick="() => OpenExport()" class="is-mobile dropdown-item">Export automaton</button>
-                    <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod" @onchange="@(() => LoadWmodAutomaton("loadwmod"))"><a>Upload Wmod Automaton</a></label>
@@ -87,7 +85,6 @@
                     <button type="button" @onclick="() => OpenPage(Page.CreateEvent)" class="is-mobile dropdown-item">Create Event</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
                     <button type="button" @onclick="() => OpenPage(Page.CreateVisualAutomaton)" class="is-mobile dropdown-item">Create Visual Automaton</button>
-                    <a href="petri-nets" class="is-mobile dropdown-item">Petri Net</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Operations</p>
                     <button type="button" @onclick="() => OpenPage(Page.CreateAutomaton)" class="is-mobile dropdown-item">Create Automaton</button>
@@ -98,7 +95,6 @@
                     <button type="button" @onclick="OpenSimulation" class="is-mobile dropdown-item">Simulate Automata</button>
                     <button type="button" @onclick="() => OpenPage(Page.GenerateStructuredText)" class="is-mobile dropdown-item">Generate Structured Text</button>
                     <button type="button" @onclick="() => OpenExport()" class="is-mobile dropdown-item">Export automaton</button>
-                    <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Import</p>
                     <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson_m" @onchange="@(() => LoadJsonAutomaton("loadjson_m"))"><a>Upload Json Automaton</a></label>
@@ -272,10 +268,10 @@
                 <Modal Title="Export Wmod" OnClose="@Clear"><ExportWmod Automata="automata" OnSuccess="@Clear" OnCancel="@Clear"></ExportWmod></Modal>
                 break;
             case Page.GenerateStructuredText:
-                <Modal Title="Generate Structured Text" OnClose="@Clear"><GenerateStructuredText Automata="automata" InitialPlantName="@structuredTextInitialPlantName" OnCancel="@Clear" /></Modal>
+                <Modal Title="Generate Structured Text" OnClose="@Clear"><GenerateStructuredText Automata="automata" OnCancel="@Clear" /></Modal>
                 break;
             case Page.ExportAutomaton:
-                <Modal Title="Export automaton" OnClose="@Clear"><ExportAutomaton Automata="automata" InitialAutomatonName="@exportInitialAutomatonName" OnCancel="@Clear" OnWmod="() => OpenPage(Page.ExportWmod)" OnStructuredText="OpenStructuredText" /></Modal>
+                <Modal Title="Export automaton" OnClose="@Clear"><ExportAutomaton Automata="automata" InitialAutomatonName="@exportInitialAutomatonName" OnCancel="@Clear" OnWmod="() => OpenPage(Page.ExportWmod)" /></Modal>
                 break;
             case Page.Empty:
             default:
@@ -325,15 +321,7 @@
                             </button>
                             <button type="button" @onclick="() => OpenExport(selected.Name)">
                                 <i class="fas fa-download" aria-hidden="true"></i>
-                                <span><strong>Export</strong><small>Choose model, image or PLC code format</small></span>
-                            </button>
-                            <button type="button" @onclick="() => SaveXmlAutomaton(selected)">
-                                <i class="fas fa-download" aria-hidden="true"></i>
-                                <span><strong>Download XML</strong><small>XML format</small></span>
-                            </button>
-                            <button type="button" @onclick="() => OpenPage(Page.GenerateStructuredText)">
-                                <i class="fas fa-code" aria-hidden="true"></i>
-                                <span><strong>Structured Text</strong><small>Generate PLC code from plants and supervisors</small></span>
+                                <span><strong>Export</strong><small>Choose a model or drawing format</small></span>
                             </button>
                         </div>
                     </article>
@@ -382,7 +370,6 @@
                                             <button type="button" @onclick="() => SummaryAutomaton(G.Value)" title="Summary"><i class="fas fa-list"></i><span>Summary</span></button>
                                             <button type="button" @onclick="() => OpenVisualLayout(G.Value)" disabled="@(!CanOpenVisualLayout(G.Value))" title="@VisualLayoutTitle(G.Value)"><i class="fas fa-edit"></i><span>Layout</span></button>
                                             <button type="button" @onclick="() => OpenExport(G.Key)" title="Export" aria-label="Export automaton @G.Key"><i class="fas fa-download" aria-hidden="true"></i><span>Export</span></button>
-                                            <button type="button" @onclick="() => SaveXmlAutomaton(G.Value)" title="Download XML"><i class="fas fa-file-code"></i><span>XML</span></button>
                                             <button type="button" class="is-danger" @onclick="() => RemoveAutomaton(G.Key)" title="Delete"><i class="fas fa-trash"></i><span>Delete</span></button>
                                         </div>
                                     </article>
@@ -395,8 +382,6 @@
                         <button @onclick="ev => page = Page.CreateEvent"><i class="fas fa-long-arrow-alt-right"></i><span><strong>Create event</strong><small>Define system events</small></span></button>
                         <button @onclick="LoadSmallFactory"><i class="fas fa-industry"></i><span><strong>Try an example</strong><small>Load the Small Factory</small></span></button>
                         <button disabled="@(automata.Count == 0)" @onclick="ev => page = Page.AdvancedOperations"><i class="fas fa-flask"></i><span><strong>Advanced analysis</strong><small>Projection, regex, conflict and more</small></span></button>
-                        <button disabled="@(automata.Count == 0)" @onclick="() => OpenPage(Page.GenerateStructuredText)"><i class="fas fa-code" aria-hidden="true"></i><span><strong>Structured Text</strong><small>Generate PLC code from plants and supervisors</small></span></button>
-                        <a href="petri-nets"><i class="fas fa-network-wired"></i><span><strong>Petri-net studio</strong><small>Model places, transitions and markings</small></span></a>
                     </div>
                 </div>
                 }
@@ -450,7 +435,6 @@
     private DeterministicFiniteAutomaton automaton = null;
     private string selectedAutomatonName;
     private string exportInitialAutomatonName = "";
-    private string structuredTextInitialPlantName = "";
     private AutomatonLayoutData activeLayout;
     private bool ShowStates = false;
     private bool ShowEvents = false;
@@ -522,7 +506,6 @@
 
     private void OpenPage(Page target)
     {
-        if (target == Page.GenerateStructuredText) structuredTextInitialPlantName = "";
         page = target;
         mobileMenuOpen = false;
     }
@@ -790,17 +773,6 @@
     {
         exportInitialAutomatonName = name ?? selectedAutomatonName ?? "";
         OpenPage(Page.ExportAutomaton);
-    }
-
-    private void OpenStructuredText(string plantName)
-    {
-        OpenPage(Page.GenerateStructuredText);
-        structuredTextInitialPlantName = plantName;
-    }
-
-    private void SaveXmlAutomaton(DeterministicFiniteAutomaton G)
-    {
-        JsRuntime.SaveFile($"{G.Name}.xml", G.ToXML);
     }
 
     private async Task LoadJsonAutomaton(string name)

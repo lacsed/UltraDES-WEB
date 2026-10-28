@@ -1,14 +1,15 @@
 # Geração de Texto Estruturado
 
-Abra **Operations → Generate Structured Text** ou o atalho **Structured Text**.
+Abra **Operations → Generate Structured Text**.
 Selecione ao menos uma planta e um supervisor, gere a prévia e baixe o `.st`.
 Selecionar outro papel para um autômato remove sua seleção anterior.
 Alterar as seleções ou o nome invalida a prévia anterior.
 
-O arquivo contém um `FUNCTION_BLOCK` por planta, um por supervisor e um `PROGRAM`
-coordenador. A separação segue a arquitetura do tutorial de controle supervisório:
-plantas executam ações, supervisores observam eventos e calculam desabilitações.
-Não é necessário construir o produto síncrono das plantas.
+O arquivo contém um único `PROGRAM` IEC 61131-3 em Texto Estruturado inline, sem
+`FUNCTION_BLOCK`. Cada planta mantém suas variáveis de estado e executa suas ações
+locais. Supervisores mantêm o estado interno e calculam somente desabilitações
+para eventos controláveis de seu alfabeto. Não é necessário construir o produto
+síncrono das plantas.
 
 ## Contrato dos modelos
 
@@ -36,7 +37,7 @@ Não é necessário construir o produto síncrono das plantas.
 1. A primeira chamada e cada ciclo com `reset = TRUE` reinicializam os autômatos
    e as filas sem disparar eventos. Isso prepara as prontidões e os bloqueios
    antes da primeira arbitragem.
-2. `R_TRIG` captura as bordas dos `input_`. Contadores `UDINT` independentes
+2. Detecção inline por `input_ AND NOT input_prev_` captura as bordas. Contadores `UDINT` independentes
    preservam ocorrências simultâneas de eventos incontroláveis até sua execução.
    Bordas amostradas durante reset são descartadas. Pulsos físicos menores que
    um scan exigem captura de hardware ou outra adaptação na interface de entrada.
@@ -73,9 +74,9 @@ repetidas enquanto o estado permanecer o mesmo. Complete os pontos apropriados
 para a aplicação, sem duplicar uma ação entre seu ponto local e seu ponto global.
 Os supervisores não contêm placeholders de ações ou saídas para atuadores.
 
-O resultado é um template IEC 61131-3. Importe cada POU separadamente quando o
-IDE exigir e adapte o dialeto, o agendamento da tarefa, as variáveis de I/O e os
-tipos necessários ao CLP. Os placeholders não atribuem saídas físicas.
+O resultado é um programa IEC 61131-3. Importe o programa no IDE e adapte o
+dialeto, o agendamento da tarefa, as variáveis de I/O e os tipos necessários ao
+CLP. Os placeholders não atribuem saídas físicas.
 
 ## Verificação
 

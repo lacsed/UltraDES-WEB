@@ -7,7 +7,7 @@
     <div class="analysis-intro">
         <span class="eyebrow">Automaton export</span>
         <h3>Choose a file format</h3>
-        <p>Download a model, a drawing or generate PLC code from your workspace.</p>
+        <p>Download an automaton model or drawing in your preferred format.</p>
     </div>
     @if (Automata.Count == 0)
     {
@@ -43,9 +43,6 @@
                             <option value="dot">DOT / Graphviz (.dot)</option>
                             <option value="svg">SVG (.svg)</option>
                             <option value="png">PNG (.png)</option>
-                        </optgroup>
-                        <optgroup label="PLC code">
-                            <option value="st">Structured Text (.st)</option>
                         </optgroup>
                     </select>
                 </div>
@@ -84,17 +81,10 @@
             </div>
         }
         <div class="buttons analysis-actions">
-            @if (format == "st")
-            {
-                <button type="button" class="button is-primary" @onclick="() => OnStructuredText.InvokeAsync(selected)">Configure plants and supervisors</button>
-            }
-            else
-            {
-                <button type="button" class="button is-primary" disabled="@(busy || confirmImage)" @onclick="() => Download()">
-                    <i class="fas @(busy ? "fa-circle-notch fa-spin" : "fa-download")" aria-hidden="true"></i>
-                    <span>@(busy ? "Exporting…" : "Download file")</span>
-                </button>
-            }
+            <button type="button" class="button is-primary" disabled="@(busy || confirmImage)" @onclick="() => Download()">
+                <i class="fas @(busy ? "fa-circle-notch fa-spin" : "fa-download")" aria-hidden="true"></i>
+                <span>@(busy ? "Exporting…" : "Download file")</span>
+            </button>
             <button type="button" class="button" disabled="@busy" @onclick="OnCancel">Close</button>
         </div>
     }
@@ -105,7 +95,6 @@
     [Parameter] public string InitialAutomatonName { get; set; } = "";
     [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
     [Parameter, EditorRequired] public EventCallback OnWmod { get; set; }
-    [Parameter, EditorRequired] public EventCallback<string> OnStructuredText { get; set; }
     private string selected = "";
     private string format = "json";
     private string wmodRole = "plant";
@@ -128,7 +117,6 @@
         "dot" => "Graphviz source for the automaton drawing; no rendering is needed to download it.",
         "svg" => "Vector drawing of the automaton, suitable for scaling and editing.",
         "png" => "Raster drawing of the automaton as a PNG image.",
-        "st" => "Generate a Structured Text template by selecting plants and supervisors. The selected automaton will start as a plant; its role can be changed.",
         _ => ""
     };
 

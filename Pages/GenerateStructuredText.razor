@@ -6,7 +6,7 @@
     <div class="analysis-intro">
         <span class="eyebrow">PLC code generation</span>
         <h3>Generate Structured Text</h3>
-        <p>Select the plants that execute actions and the supervisors that disable controllable events.</p>
+        <p>Select plants and supervisors to generate one plain Structured Text program. No function blocks are used.</p>
     </div>
 
     <div class="notification is-info is-light">
@@ -50,7 +50,7 @@
     <div class="field">
         <label class="label" for="st-program-name">Program name</label>
         <input class="input" id="st-program-name" maxlength="40" @bind="programName" @bind:event="oninput" @bind:after="ClearResult" autocomplete="off" />
-        <p class="help">The generated PROGRAM uses the prefix PRG_. The download uses the .st extension.</p>
+            <p class="help">The generated source is a single IEC 61131-3 PROGRAM. The download uses the .st extension.</p>
     </div>
     @if (!string.IsNullOrWhiteSpace(error))
     {
@@ -71,7 +71,7 @@
             <p>Fill the TODOs for plant state actions, controllable-event actions and sensor/output mapping.
                 Controllable events run automatically when ready and permitted; use <code>req_</code> to add demand conditions.</p>
             <p>One event runs per scan, with uncontrollable events first and fixed priority by event name.
-                Import each POU into your PLC IDE and adapt the template to its dialect.</p>
+                Import the program into your PLC IDE and adapt the template to its dialect.</p>
             @foreach (var warning in result.Warnings)
             {
                 <div class="notification is-warning is-light" role="status">@warning</div>
@@ -86,7 +86,6 @@
 
 @code {
     [Parameter, EditorRequired] public Dictionary<string, DeterministicFiniteAutomaton> Automata { get; set; } = [];
-    [Parameter] public string InitialPlantName { get; set; } = "";
     [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
 
     private readonly HashSet<string> plants = new(StringComparer.Ordinal);
@@ -95,11 +94,6 @@
     private string error = "";
     private bool busy;
     private StructuredTextGenerator.Result result;
-
-    protected override void OnInitialized()
-    {
-        if (Automata.ContainsKey(InitialPlantName)) plants.Add(InitialPlantName);
-    }
 
     private void SelectRole(string name, object value, bool isPlant)
     {

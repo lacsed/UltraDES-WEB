@@ -11,7 +11,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       await page.getByRole('button', { name: 'Export automaton M1', exact: true }).click();
     } else {
       await page.getByRole('button', { name: 'M1 2 states · 2 events', exact: true }).click();
-      await page.getByRole('button', { name: 'Export Choose model, image or PLC code format', exact: true }).click();
+      await page.getByRole('button', { name: 'Export Choose a model or drawing format', exact: true }).click();
     }
     const dialog = page.getByRole('dialog', { name: 'Export automaton', exact: true });
     await expect(dialog.getByLabel('Automaton', { exact: true })).toHaveValue('M1');
@@ -79,18 +79,8 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     expect(JSON.parse(await readFile(testInfo.outputPath('M2.json'), 'utf8'))[0].events.map((e: { name: string }) => e.name).sort()).toEqual(['a2', 'b2']);
 
     await dialog.getByLabel('Automaton', { exact: true }).selectOption('M1');
-    await dialog.getByLabel('Format', { exact: true }).selectOption('st');
-    await testInfo.attach('export-modal', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-    await dialog.getByRole('button', { name: 'Configure plants and supervisors', exact: true }).click();
-    const st = page.getByRole('dialog', { name: 'Generate Structured Text', exact: true });
-    await expect(st.getByRole('group', { name: 'Plants', exact: true }).getByRole('checkbox', { name: 'M1 2 states', exact: true })).toBeChecked();
-    await st.getByRole('group', { name: 'Plants', exact: true }).getByRole('checkbox', { name: 'M2 2 states', exact: true }).check();
-    await st.getByRole('group', { name: 'Supervisors', exact: true }).getByRole('checkbox', { name: 'E 2 states', exact: true }).check();
-    await st.getByRole('button', { name: 'Generate code', exact: true }).click();
-    const stDownload = page.waitForEvent('download');
-    await st.getByRole('button', { name: 'Download .st', exact: true }).click();
-    expect((await stDownload).suggestedFilename()).toBe('SCT_Main.st');
+    await expect(dialog.getByLabel('Format', { exact: true }).locator('option')).toHaveCount(9);
+    await expect(dialog.getByLabel('Format', { exact: true })).not.toContainText('Structured Text');
   });
 }
 
@@ -102,7 +92,7 @@ test('guards large image rendering and keeps DOT and combined WMOD export availa
     events: [{ id: 0, name: 'tick', controllability: 'controllable' }],
     transitions: states.map(({ id }) => ({ origin: id, trigger: 0, destination: (id + 1) % states.length })) }];
   await page.locator('#loadjson').setInputFiles({ name: 'large.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(model)) });
-  await page.getByRole('button', { name: 'Export Choose model, image or PLC code format', exact: true }).click();
+  await page.getByRole('button', { name: 'Export Choose a model or drawing format', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Export automaton', exact: true });
   await dialog.getByLabel('Format', { exact: true }).selectOption('svg');
   await dialog.getByRole('button', { name: 'Download file', exact: true }).click();

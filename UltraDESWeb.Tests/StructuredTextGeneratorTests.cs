@@ -18,22 +18,22 @@ public sealed class StructuredTextGeneratorTests
         Assert.Equal(4, result.EventCount);
 
         var main = result.Code[result.Code.IndexOf("PROGRAM PRG_SCT_Main", StringComparison.Ordinal)..];
-        Assert.Contains("dis_E3_shared := S1_Gate.dis_E3_shared OR S2_Safety.dis_E3_shared;", main);
-        Assert.Contains("dis_E4_start := S1_Gate.dis_E4_start;", main); // absent Safety alphabet does not veto
-        Assert.Contains("req_E3_shared AND NOT dis_E3_shared AND (P1_Feed.rdy_E3_shared AND P2_Press.rdy_E3_shared)", main);
-        Assert.Contains("(pending_E2_done > UDINT#0) AND (P1_Feed.rdy_E2_done AND P2_Press.rdy_E2_done)", main);
+        Assert.Contains("dis_E3_shared := NOT ((S1_Gate_q = 1)) OR NOT ((S2_Safety_q = 0));", main);
+        Assert.Contains("dis_E4_start := NOT ((S1_Gate_q = 0));", main); // absent Safety alphabet does not veto
+        Assert.Contains("req_E3_shared AND NOT dis_E3_shared AND (P1_Feed_rdy_E3_shared AND P2_Press_rdy_E3_shared)", main);
+        Assert.Contains("(pending_E2_done > UDINT#0) AND (P1_Feed_rdy_E2_done AND P2_Press_rdy_E2_done)", main);
         Assert.DoesNotContain("dis_E2_done", result.Code);
         Assert.DoesNotContain("dis_E1_alert", result.Code);
         Assert.True(main.IndexOf("IF (pending_E1_alert", StringComparison.Ordinal) < main.IndexOf("ELSIF req_E3_shared", StringComparison.Ordinal));
         Assert.Contains("pending_E1_alert := pending_E1_alert - UDINT#1;", main);
-        Assert.Contains("edge_E1_alert(CLK := input_E1_alert);", main);
+        Assert.Contains("edge_E1_alert := input_E1_alert AND NOT input_prev_E1_alert;", main);
+        Assert.DoesNotContain("R_TRIG", main);
         Assert.Contains("pending_E1_alert < UDINT#4294967295", main);
 
-        var supervisor = Block(result.Code, "FB_S1_Gate");
-        Assert.DoesNotContain("TODO", supervisor);
-        Assert.DoesNotContain("act_", supervisor);
-        Assert.Contains("dis_E3_shared := NOT ((q = 1));", supervisor);
-        Assert.Contains("dis_E4_start := NOT ((q = 0));", supervisor);
+        Assert.DoesNotContain("FUNCTION_BLOCK", result.Code);
+        Assert.DoesNotContain("S1_Gate_act_", result.Code);
+        Assert.Contains("dis_E3_shared := NOT ((S1_Gate_q = 1)) OR NOT ((S2_Safety_q = 0));", main);
+        Assert.Contains("dis_E4_start := NOT ((S1_Gate_q = 0));", main);
     }
 
     [Fact]
@@ -44,9 +44,9 @@ public sealed class StructuredTextGeneratorTests
         var plant = new DeterministicFiniteAutomaton(new Transition[] { new(q, tick, q) }, q, "Plant");
         var supervisor = new DeterministicFiniteAutomaton(new Transition[] { new(q, tick, q) }, q, "Supervisor");
         var code = generator.Generate([plant], [supervisor]).Code;
-        Assert.Contains("IF exec_E1_tick THEN", Block(code, "FB_P1_Plant"));
-        Assert.DoesNotContain("IF ev_E1_tick THEN", Block(code, "FB_S1_Supervisor"));
-        Assert.Contains("dis_E1_tick := NOT ((q = 0));", Block(code, "FB_S1_Supervisor"));
+        Assert.Contains("IF ev_E1_tick THEN", code);
+        Assert.Contains("dis_E1_tick := NOT ((S1_Supervisor_q = 0));", code);
+        Assert.DoesNotContain("FUNCTION_BLOCK", code);
         Assert.Contains("IF ev_E1_tick THEN\n    act_E1_tick := TRUE;", code);
     }
 
@@ -59,10 +59,10 @@ public sealed class StructuredTextGeneratorTests
         Assert.Contains("initialized : BOOL := FALSE;", main);
         Assert.Contains("initializing := reset OR NOT initialized;", main);
         Assert.Contains("IF NOT initializing THEN\n    IF", main);
-        Assert.Contains("P1_Feed(\n    reset := initializing,", main);
-        Assert.Contains("S1_Gate(\n    reset := initializing,", main);
-        Assert.True(main.IndexOf("P1_Feed(\n", StringComparison.Ordinal) < main.IndexOf("S1_Gate(\n", StringComparison.Ordinal));
-        Assert.True(main.IndexOf("S1_Gate(\n", StringComparison.Ordinal) < main.IndexOf("initialized := TRUE;", StringComparison.Ordinal));
+        Assert.Contains("P1_Feed_q := 0;", main);
+        Assert.Contains("S1_Gate_q := 0;", main);
+        Assert.True(main.IndexOf("P1_Feed_q := 0;", StringComparison.Ordinal) < main.IndexOf("S1_Gate_q := 0;", StringComparison.Ordinal));
+        Assert.True(main.IndexOf("S1_Gate_q := 0;", StringComparison.Ordinal) < main.IndexOf("initialized := TRUE;", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -71,14 +71,13 @@ public sealed class StructuredTextGeneratorTests
         var (plants, supervisors) = System();
         var code = generator.Generate(plants, supervisors).Code;
         Assert.Contains("q = 0: z_idle (initial)", code);
-        var plant = Block(code, "FB_P1_Feed");
-        Assert.Contains("TODO onState: actions while plant Feed is in state z_idle.", plant);
-        Assert.Contains("TODO onEntry: Feed / z_idle", plant);
-        Assert.Contains("TODO onExit: Feed / z_idle", plant);
-        Assert.Contains("q_entry := (q <> q_prev);", plant);
-        Assert.Contains("act_state_0 := FALSE;", plant);
-        Assert.Contains("entry_state_0 := FALSE;", plant);
-        Assert.Contains("exit_state_0 := FALSE;", plant);
+        Assert.Contains("TODO onState: actions while plant Feed is in state z_idle.", code);
+        Assert.Contains("TODO onEntry: Feed / z_idle", code);
+        Assert.Contains("TODO onExit: Feed / z_idle", code);
+        Assert.Contains("P1_Feed_q_entry := (P1_Feed_q <> P1_Feed_q_prev);", code);
+        Assert.Contains("P1_Feed_act_state_0 := (P1_Feed_q = 0);", code);
+        Assert.Contains("P1_Feed_entry_state_0 := P1_Feed_q_entry AND (P1_Feed_q = 0);", code);
+        Assert.Contains("P1_Feed_exit_state_0 := P1_Feed_q_entry AND (P1_Feed_q_prev = 0);", code);
         Assert.Contains("TODO onControllableEvent: shared", code);
         Assert.DoesNotContain("TODO onControllableEvent: done", code);
     }
@@ -106,10 +105,10 @@ public sealed class StructuredTextGeneratorTests
         Assert.Contains("PROGRAM PRG_Main", code);
         Assert.Contains("initial * ) PROGRAM injected", code);
         Assert.DoesNotContain("\nPROGRAM injected", code);
-        var identifiers = global::System.Text.RegularExpressions.Regex.Matches(code, @"(?m)^FUNCTION_BLOCK (\w+)")
-            .Select(match => match.Groups[1].Value).ToArray();
-        Assert.Equal(3, identifiers.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.All(identifiers, name => Assert.Matches("^[A-Za-z][A-Za-z0-9_]*$", name));
+        Assert.DoesNotContain("FUNCTION_BLOCK", code);
+        Assert.Contains("_act_state_0 : BOOL;", code);
+        Assert.Contains("_q : DINT := 0;", code);
+        Assert.Contains("S1_PROGRAM_q", code);
     }
 
     [Fact]
@@ -135,12 +134,6 @@ public sealed class StructuredTextGeneratorTests
         Assert.Throws<ArgumentException>(() => generator.Generate(plants, supervisors, "Main; injected"));
         Assert.Throws<ArgumentException>(() => generator.Generate(plants, supervisors, "Main__PLC"));
         Assert.Throws<ArgumentException>(() => generator.Generate(plants, supervisors, "Main_"));
-    }
-
-    private static string Block(string code, string name)
-    {
-        var start = code.IndexOf($"FUNCTION_BLOCK {name}\n", StringComparison.Ordinal);
-        return code[start..code.IndexOf("END_FUNCTION_BLOCK", start, StringComparison.Ordinal)];
     }
 
     private static (DeterministicFiniteAutomaton[] Plants, DeterministicFiniteAutomaton[] Supervisors) System()

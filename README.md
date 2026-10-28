@@ -17,14 +17,14 @@ Veja [o algoritmo, os limites e a validação](docs/automatic-layout.md).
 ## Exportação
 
 Selecione um autômato → **Export** para escolher JSON, XML, ADS, FSM, FM, WMOD,
-DOT, SVG, PNG ou acessar a geração de Texto Estruturado. O mesmo modal está em
+DOT, SVG ou PNG. O mesmo modal está em
 **Operations → Export automaton**. Veja [os formatos e suas opções](docs/export.md).
 
 ## Geração de código para CLP
 
 Use **Operations → Generate Structured Text** para selecionar plantas e
-supervisores e baixar um template `.st` com ações de estados e de eventos
-controláveis. Os supervisores apenas desabilitam eventos controláveis.
+supervisores e baixar um único programa `.st` inline. Os supervisores apenas
+desabilitam eventos controláveis; a saída não usa function blocks.
 Veja [o funcionamento e os pontos de personalização](docs/structured-text.md).
 
 ## Testes de navegador

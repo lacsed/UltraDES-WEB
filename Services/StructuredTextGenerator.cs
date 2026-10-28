@@ -60,7 +60,7 @@ public sealed class StructuredTextGenerator
 
         var code = new StringBuilder();
         Line(code, "(* UltraDES - IEC 61131-3 Structured Text template.");
-        Line(code, "   Import each FUNCTION_BLOCK and PROGRAM as a separate POU if required by your IDE.");
+        Line(code, "   This output is one self-contained PROGRAM with no function blocks.");
         Line(code, "   Map input_ signals to sensors and req_ signals to controllable-event demands (TRUE = automatic).");
         Line(code, "   Replace TODO comments with application actions; map act_ / entry_ / exit_ signals to outputs.");
         Line(code, "   Initial state = 0. Initialization/reset consumes a scan without firing an event.");
@@ -75,8 +75,8 @@ public sealed class StructuredTextGenerator
         foreach (var e in events)
             Line(code, $"(* {e.Id} = {Comment(e.Name)}; {(e.Controllable ? "controllable" : "uncontrollable")}; plants: {string.Join(", ", plantModels.Where(p => p.Events.Contains(e)).Select(p => p.Id))} *)");
         Line(code);
-        foreach (var model in plantModels) EmitPlant(code, model);
-        foreach (var model in supervisorModels) EmitSupervisor(code, model);
+        foreach (var model in plantModels) ModelHeader(code, model, "Plant");
+        foreach (var model in supervisorModels) ModelHeader(code, model, "Supervisor (observation and controllable-event disabling only)");
         EmitProgram(code, "PRG_" + programName, plantModels, supervisorModels, events);
         return new Result(code.ToString().Replace("\r\n", "\n"), plantModels.Length, supervisorModels.Length, events.Length, warnings);
     }
@@ -95,113 +95,6 @@ public sealed class StructuredTextGenerator
             automaton.Events.Select(e => eventMap[e.ToString()]).OrderBy(e => e.Name, StringComparer.Ordinal).ToArray(), transitions);
     }
 
-    private static void EmitPlant(StringBuilder code, Model model)
-    {
-        ModelHeader(code, model, "Plant");
-        Line(code, $"FUNCTION_BLOCK FB_{model.Id}");
-        Line(code, "VAR_INPUT");
-        Line(code, "    reset : BOOL;");
-        foreach (var e in model.Events) Line(code, $"    exec_{e.Id} : BOOL;");
-        Line(code, "END_VAR");
-        Line(code, "VAR_OUTPUT");
-        Line(code, "    q : DINT := 0;");
-        Line(code, "    q_entry : BOOL;");
-        foreach (var e in model.Events) Line(code, $"    rdy_{e.Id} : BOOL;");
-        foreach (var state in model.States)
-        {
-            Line(code, $"    act_state_{state.Id} : BOOL; (* continuous level *)");
-            Line(code, $"    entry_state_{state.Id} : BOOL; (* one-scan entry pulse *)");
-            Line(code, $"    exit_state_{state.Id} : BOOL; (* one-scan exit pulse *)");
-        }
-        Line(code, "END_VAR");
-        Line(code, "VAR");
-        Line(code, "    q_prev : DINT := -1;");
-        Line(code, "END_VAR");
-        foreach (var state in model.States)
-        {
-            Line(code, $"act_state_{state.Id} := FALSE;");
-            Line(code, $"entry_state_{state.Id} := FALSE;");
-            Line(code, $"exit_state_{state.Id} := FALSE;");
-        }
-        EmitTransitions(code, model, "exec_", omitSelfLoops: false);
-        Line(code, "q_entry := (q <> q_prev);");
-        Line(code, "IF q_entry THEN");
-        Line(code, "    CASE q_prev OF");
-        foreach (var state in model.States)
-        {
-            Line(code, $"        {state.Id}:");
-            Line(code, $"            exit_state_{state.Id} := TRUE;");
-            Line(code, $"            (* TODO onExit: {Comment(model.Name)} / {Comment(state.Name)} *)");
-        }
-        Line(code, "    END_CASE;");
-        Line(code, "END_IF;");
-        Line(code, "CASE q OF");
-        foreach (var state in model.States)
-        {
-            Line(code, $"    {state.Id}: (* {Comment(state.Name)} *)");
-            Line(code, $"        act_state_{state.Id} := TRUE;");
-            Line(code, "        IF q_entry THEN");
-            Line(code, $"            entry_state_{state.Id} := TRUE;");
-            Line(code, $"            (* TODO onEntry: {Comment(model.Name)} / {Comment(state.Name)} *)");
-            Line(code, "        END_IF;");
-            Line(code, $"        (* TODO onState: actions while plant {Comment(model.Name)} is in state {Comment(state.Name)}. *)");
-        }
-        Line(code, "END_CASE;");
-        Line(code, "q_prev := q;");
-        foreach (var e in model.Events)
-            Line(code, $"rdy_{e.Id} := {StateExpression(model.Transitions.Where(t => t.Event == e).Select(t => t.Origin))};");
-        Line(code, "END_FUNCTION_BLOCK");
-        Line(code);
-    }
-
-    private static void EmitSupervisor(StringBuilder code, Model model)
-    {
-        ModelHeader(code, model, "Supervisor (observation and controllable-event disabling only)");
-        Line(code, $"FUNCTION_BLOCK FB_{model.Id}");
-        Line(code, "VAR_INPUT");
-        Line(code, "    reset : BOOL;");
-        foreach (var e in model.Events) Line(code, $"    ev_{e.Id} : BOOL;");
-        Line(code, "END_VAR");
-        Line(code, "VAR_OUTPUT");
-        Line(code, "    q : DINT := 0;");
-        foreach (var e in model.Events.Where(e => e.Controllable)) Line(code, $"    dis_{e.Id} : BOOL;");
-        Line(code, "END_VAR");
-        EmitTransitions(code, model, "ev_", omitSelfLoops: true);
-        foreach (var e in model.Events.Where(e => e.Controllable))
-            // Include self-loops in the enabling map even though their state update is omitted.
-            Line(code, $"dis_{e.Id} := NOT ({StateExpression(model.Transitions.Where(t => t.Event == e).Select(t => t.Origin))});");
-        Line(code, "END_FUNCTION_BLOCK");
-        Line(code);
-    }
-
-    private static void EmitTransitions(StringBuilder code, Model model, string eventPrefix, bool omitSelfLoops)
-    {
-        Line(code, "IF reset THEN");
-        Line(code, "    q := 0;");
-        var transitions = model.Transitions.Where(t => !omitSelfLoops || t.Origin != t.Destination).ToArray();
-        if (transitions.Length > 0)
-        {
-            Line(code, "ELSE");
-            Line(code, "    CASE q OF");
-            foreach (var state in transitions.GroupBy(t => t.Origin))
-            {
-                Line(code, $"        {state.Key}:");
-                var first = true;
-                foreach (var t in state)
-                {
-                    Line(code, $"            {(first ? "IF" : "ELSIF")} {eventPrefix}{t.Event.Id} THEN");
-                    if (!omitSelfLoops && t.Event.Controllable)
-                        Line(code, $"                (* TODO plant transition action: {Comment(t.Event.Name)}; {t.Origin} -> {t.Destination}. *)");
-                    Line(code, $"                q := {t.Destination};");
-                    first = false;
-                }
-                Line(code, "            END_IF;");
-            }
-            Line(code, "    END_CASE;");
-        }
-        Line(code, "END_IF;");
-    }
-
     private static void EmitProgram(StringBuilder code, string name, Model[] plants, Model[] supervisors, EventSymbol[] events)
     {
         Line(code, $"PROGRAM {name}");
@@ -210,7 +103,20 @@ public sealed class StructuredTextGenerator
         Line(code, "    initialized : BOOL := FALSE;");
         Line(code, "    initializing : BOOL;");
         Line(code, "    queue_overflow : BOOL := FALSE;");
-        foreach (var model in plants.Concat(supervisors)) Line(code, $"    {model.Id} : FB_{model.Id};");
+        foreach (var model in plants)
+        {
+            Line(code, $"    {model.Id}_q : DINT := 0;");
+            Line(code, $"    {model.Id}_q_prev : DINT := -1;");
+            Line(code, $"    {model.Id}_q_entry : BOOL;");
+            foreach (var e in model.Events) Line(code, $"    {model.Id}_rdy_{e.Id} : BOOL;");
+            foreach (var state in model.States)
+            {
+                Line(code, $"    {model.Id}_act_state_{state.Id} : BOOL;");
+                Line(code, $"    {model.Id}_entry_state_{state.Id} : BOOL;");
+                Line(code, $"    {model.Id}_exit_state_{state.Id} : BOOL;");
+            }
+        }
+        foreach (var model in supervisors) Line(code, $"    {model.Id}_q : DINT := 0;");
         foreach (var e in events)
         {
             Line(code, $"    ev_{e.Id} : BOOL;");
@@ -223,7 +129,8 @@ public sealed class StructuredTextGenerator
             else
             {
                 Line(code, $"    input_{e.Id} : BOOL; (* TODO map sensor signal *)");
-                Line(code, $"    edge_{e.Id} : R_TRIG;");
+                Line(code, $"    edge_{e.Id} : BOOL;");
+                Line(code, $"    input_prev_{e.Id} : BOOL := FALSE;");
                 Line(code, $"    pending_{e.Id} : UDINT := 0;");
             }
         }
@@ -233,7 +140,7 @@ public sealed class StructuredTextGenerator
         Line(code, "(* Capture sensor edges before arbitration; retain simultaneous events. *)");
         foreach (var e in events.Where(e => !e.Controllable))
         {
-            Line(code, $"edge_{e.Id}(CLK := input_{e.Id});");
+            Line(code, $"edge_{e.Id} := input_{e.Id} AND NOT input_prev_{e.Id};");
             Line(code, "IF initializing THEN");
             Line(code, $"    pending_{e.Id} := 0;");
             Line(code, $"ELSIF edge_{e.Id}.Q THEN");
@@ -243,6 +150,7 @@ public sealed class StructuredTextGenerator
             Line(code, "        queue_overflow := TRUE;");
             Line(code, "    END_IF;");
             Line(code, "END_IF;");
+            Line(code, $"input_prev_{e.Id} := input_{e.Id};");
         }
         Line(code, "(* Snapshot supervisor decisions and clear all previous event/action pulses. *)");
         foreach (var e in events)
@@ -250,7 +158,8 @@ public sealed class StructuredTextGenerator
             Line(code, $"ev_{e.Id} := FALSE;");
             if (!e.Controllable) continue;
             Line(code, $"act_{e.Id} := FALSE;");
-            var decisions = supervisors.Where(s => s.Events.Contains(e)).Select(s => $"{s.Id}.dis_{e.Id}").ToArray();
+            var decisions = supervisors.Where(s => s.Events.Contains(e) && e.Controllable)
+                .Select(s => $"NOT ({StateExpression(s.Transitions.Where(t => t.Event == e).Select(t => t.Origin), s.Id + "_q")})").ToArray();
             Line(code, $"dis_{e.Id} := {(decisions.Length > 0 ? string.Join(" OR ", decisions) : "FALSE")};");
         }
         if (events.Length > 0)
@@ -260,7 +169,7 @@ public sealed class StructuredTextGenerator
             var first = true;
             foreach (var e in events.OrderBy(e => e.Controllable).ThenBy(e => e.Name, StringComparer.Ordinal))
             {
-                var ready = string.Join(" AND ", plants.Where(p => p.Events.Contains(e)).Select(p => $"{p.Id}.rdy_{e.Id}"));
+                var ready = string.Join(" AND ", plants.Where(p => p.Events.Contains(e)).Select(p => $"{p.Id}_rdy_{e.Id}"));
                 var guard = e.Controllable ? $"req_{e.Id} AND NOT dis_{e.Id}" : $"(pending_{e.Id} > UDINT#0)";
                 Line(code, $"    {(first ? "IF" : "ELSIF")} {guard} AND ({ready}) THEN");
                 Line(code, $"        ev_{e.Id} := TRUE;");
@@ -270,10 +179,10 @@ public sealed class StructuredTextGenerator
             Line(code, "    END_IF;");
             Line(code, "END_IF;");
         }
-        Line(code, "(* All plants consume the same event; their readiness is then refreshed for the next scan. *)");
-        foreach (var model in plants) EmitCall(code, model, "exec_");
-        Line(code, "(* Supervisors observe the same event once, with no action or uncontrollable-event veto. *)");
-        foreach (var model in supervisors) EmitCall(code, model, "ev_");
+        Line(code, "(* Inline plant state updates and continuous state actions. *)");
+        foreach (var model in plants) EmitInlinePlant(code, model);
+        Line(code, "(* Supervisors update only their internal state. They never veto uncontrollable events. *)");
+        foreach (var model in supervisors) EmitInlineSupervisor(code, model);
         Line(code, "(* Global event actions execute once, including events shared by several plants. *)");
         foreach (var e in events.Where(e => e.Controllable))
         {
@@ -287,13 +196,62 @@ public sealed class StructuredTextGenerator
         Line(code, "END_PROGRAM");
     }
 
-    private static void EmitCall(StringBuilder code, Model model, string prefix)
+    private static void EmitInlinePlant(StringBuilder code, Model model)
     {
-        Line(code, $"{model.Id}(");
-        Line(code, $"    reset := initializing{(model.Events.Length > 0 ? "," : "")}");
-        for (var i = 0; i < model.Events.Length; i++)
-            Line(code, $"    {prefix}{model.Events[i].Id} := ev_{model.Events[i].Id}{(i < model.Events.Length - 1 ? "," : "")}");
-        Line(code, ");");
+        var q = model.Id + "_q";
+        Line(code, "IF initializing THEN"); Line(code, $"    {q} := 0;"); Line(code, "ELSE");
+        if (model.Transitions.Length > 0)
+        {
+            Line(code, $"    CASE {q} OF");
+            foreach (var state in model.Transitions.GroupBy(t => t.Origin))
+            {
+                Line(code, $"        {state.Key}:"); var first = true;
+                foreach (var edge in state)
+                {
+                    Line(code, $"            {(first ? "IF" : "ELSIF")} ev_{edge.Event.Id} THEN");
+                    if (edge.Event.Controllable) Line(code, $"                (* TODO plant transition action: {Comment(edge.Event.Name)}; {edge.Origin} -> {edge.Destination}. *)");
+                    Line(code, $"                {q} := {edge.Destination};"); first = false;
+                }
+                Line(code, "            END_IF;");
+            }
+            Line(code, "    END_CASE;");
+        }
+        Line(code, "END_IF;");
+        Line(code, $"{model.Id}_q_entry := ({q} <> {model.Id}_q_prev);");
+        foreach (var state in model.States)
+        {
+            Line(code, $"{model.Id}_act_state_{state.Id} := ({q} = {state.Id});");
+            Line(code, $"{model.Id}_entry_state_{state.Id} := {model.Id}_q_entry AND ({q} = {state.Id});");
+            Line(code, $"{model.Id}_exit_state_{state.Id} := {model.Id}_q_entry AND ({model.Id}_q_prev = {state.Id});");
+            Line(code, $"IF {model.Id}_exit_state_{state.Id} THEN (* TODO onExit: {Comment(model.Name)} / {Comment(state.Name)}. *) END_IF;");
+            Line(code, $"IF {model.Id}_entry_state_{state.Id} THEN (* TODO onEntry: {Comment(model.Name)} / {Comment(state.Name)}. *) END_IF;");
+            Line(code, $"IF {model.Id}_act_state_{state.Id} THEN (* TODO onState: actions while plant {Comment(model.Name)} is in state {Comment(state.Name)}. *) END_IF;");
+        }
+        Line(code, $"{model.Id}_q_prev := {q};");
+        foreach (var e in model.Events)
+            Line(code, $"{model.Id}_rdy_{e.Id} := {StateExpression(model.Transitions.Where(t => t.Event == e).Select(t => t.Origin), q)};");
+    }
+
+    private static void EmitInlineSupervisor(StringBuilder code, Model model)
+    {
+        var transitions = model.Transitions.Where(t => t.Origin != t.Destination).ToArray();
+        Line(code, "IF initializing THEN"); Line(code, $"    {model.Id}_q := 0;"); Line(code, "ELSE");
+        if (transitions.Length > 0)
+        {
+            Line(code, $"    CASE {model.Id}_q OF");
+            foreach (var state in transitions.GroupBy(t => t.Origin))
+            {
+                Line(code, $"        {state.Key}:"); var first = true;
+                foreach (var edge in state)
+                {
+                    Line(code, $"            {(first ? "IF" : "ELSIF")} ev_{edge.Event.Id} THEN");
+                    Line(code, $"                {model.Id}_q := {edge.Destination};"); first = false;
+                }
+                Line(code, "            END_IF;");
+            }
+            Line(code, "    END_CASE;");
+        }
+        Line(code, "END_IF;");
     }
 
     private static void ModelHeader(StringBuilder code, Model model, string role)
@@ -303,9 +261,9 @@ public sealed class StructuredTextGenerator
         Line(code, "*)");
     }
 
-    private static string StateExpression(IEnumerable<int> states)
+    private static string StateExpression(IEnumerable<int> states, string stateVariable = "q")
     {
-        var values = states.Distinct().OrderBy(q => q).Select(q => $"(q = {q})").ToArray();
+        var values = states.Distinct().OrderBy(q => q).Select(q => $"({stateVariable} = {q})").ToArray();
         return values.Length > 0 ? string.Join(" OR ", values) : "FALSE";
     }
 

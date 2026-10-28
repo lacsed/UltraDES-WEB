@@ -15,12 +15,8 @@ lista **All automata**. O modal permite trocar o autômato e o formato.
 | DOT | Código Graphviz para desenhar o autômato. |
 | SVG | Desenho vetorial. |
 | PNG | Desenho rasterizado. |
-| ST | Abre a seleção de plantas e supervisores para gerar Texto Estruturado. |
-
 **Download file** inicia o download e mantém o modal aberto para baixar outros
-formatos. No formato ST, **Configure plants and supervisors** abre o gerador,
-com o autômato atual pré-selecionado como planta; seu papel pode ser alterado.
-Veja [a documentação de Texto Estruturado](structured-text.md).
+formatos.
 
 Para exportar vários modelos juntos em WMOD, use **Export multiple automata as
 WMOD**. O painel permite selecionar plantas e especificações do módulo.
