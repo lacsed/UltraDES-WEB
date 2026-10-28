@@ -1,3 +1,18 @@
+/* /Pages/ExportAutomaton.razor.rz.scp.css */
+.export-description[b-ed9junfp3z] { margin-top: 1.25rem; }
+.export-status[b-ed9junfp3z] { margin-top: 1rem; color: #14532d; }
+.automaton-export .notification .buttons[b-ed9junfp3z] { margin-top: 1rem; }
+/* /Pages/GenerateStructuredText.razor.rz.scp.css */
+.st-selection-grid[b-tcm4plu5t2] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.st-selection-grid .analysis-options[b-tcm4plu5t2] { min-width: 0; margin-bottom: .5rem; }
+.st-selection-grid .analysis-chip-grid[b-tcm4plu5t2] { grid-template-columns: 1fr; }
+.st-selection-summary[b-tcm4plu5t2] { margin-bottom: 1.25rem; color: var(--muted); }
+.st-result[b-tcm4plu5t2] { margin-top: 1.5rem; }
+.st-result > p[b-tcm4plu5t2] { margin-bottom: .8rem; }
+.st-result .buttons[b-tcm4plu5t2] { margin-top: 1rem; }
+.st-result .button[b-tcm4plu5t2] { gap: .45rem; }
+.st-code[b-tcm4plu5t2] { max-height: 420px; overflow: auto; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #f5f7fb; font: .8rem/1.6 monospace; white-space: pre; tab-size: 4; }
+@media (max-width: 600px) { .st-selection-grid[b-tcm4plu5t2] { grid-template-columns: 1fr; gap: 0; } }
 /* /Pages/PetriNetStudio.razor.rz.scp.css */
 .petri-workspace[b-voyc2ujg86] {
     min-height: 100vh;
