@@ -25,11 +25,11 @@ jobs:
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
       # uses GitHub's checkout action to checkout code from the current repository
       - uses: actions/checkout@v4
-      # sets up .NET SDK 8.0
+      # sets up the SDK selected by global.json
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
       - name: Install WebAssembly AOT tools
         run: dotnet workload install wasm-tools --skip-manifest-update
       # publishes Blazor project to the release-folder

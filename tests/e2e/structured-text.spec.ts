@@ -6,12 +6,17 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await page.setViewportSize(viewport);
     await page.goto('/');
     const openOperations = async () => {
-      if (viewport.name === 'mobile') await page.getByRole('button', { name: 'Options', exact: true }).click();
-      else await page.getByRole('button', { name: /Operations/ }).first().hover();
+      if (viewport.name === 'mobile') await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+      else await page.locator('button[aria-controls="operations"]').hover();
     };
     await openOperations();
     const generate = page.getByRole('button', { name: 'Generate Structured Text', exact: true });
-    await expect(generate).toBeDisabled();
+    await expect(generate).toBeEnabled();
+    await generate.click();
+    const emptyDialog = page.getByRole('dialog', { name: 'Generate Structured Text', exact: true });
+    await emptyDialog.getByRole('button', { name: 'Generate code', exact: true }).click();
+    await expect(emptyDialog.getByRole('alert')).toHaveText('Select at least one plant.');
+    await emptyDialog.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.getByRole('button', { name: 'Try an example Load the Small Factory' }).click();
     await openOperations();
     await expect(generate).toBeEnabled();
@@ -38,7 +43,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     expect(source).toContain('PROGRAM PRG_Factory_Control');
     expect(source).toContain('TODO onState: actions while plant M1 is in state q0.');
     expect(source).toContain('TODO onControllableEvent: a2');
-    expect(source).toContain('dis_E2_a2 := NOT ((S1_E_q = 0));');
+    expect(source).toContain('dis_E2_a2 := NOT ((S1_E_q = 1));');
     expect(source).not.toContain('dis_E3_b1');
     expect(source).toContain('S1_E_q : DINT := 0;');
     expect(source).not.toContain('FUNCTION_BLOCK');

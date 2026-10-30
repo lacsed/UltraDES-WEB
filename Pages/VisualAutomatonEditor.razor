@@ -169,7 +169,14 @@
         try
         {
             var before = await editor.InvokeAsync<AutomatonLayoutData>("getLayout");
-            var progress = new Progress<string>(message => { layoutStatus = message; _ = InvokeAsync(StateHasChanged); });
+            var cancellation = layoutCancellation;
+            var progress = new Progress<string>(message =>
+            {
+                // Progress callbacks can arrive after completion or after a new layout starts.
+                if (!layoutBusy || !ReferenceEquals(layoutCancellation, cancellation)) return;
+                layoutStatus = message;
+                _ = InvokeAsync(StateHasChanged);
+            });
             var result = await LayoutService.CreateAsync(source, progress, layoutCancellation.Token, layoutStyle);
             layoutCancellation.Token.ThrowIfCancellationRequested();
             await editor.InvokeVoidAsync("applyLayout", result);

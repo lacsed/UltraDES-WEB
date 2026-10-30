@@ -29,7 +29,7 @@ Veja [o funcionamento e os pontos de personalização](docs/structured-text.md).
 
 ## Testes de navegador
 
-Requisitos: Node.js 20 ou superior e .NET SDK 8.
+Requisitos: Node.js 24 ou superior e .NET SDK 10, na versão indicada em `global.json`.
 
 ```bash
 npm ci
