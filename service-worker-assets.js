@@ -25,7 +25,7 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-HfRMhfAz7vzwJKJKKfQ4Si7\/x161\/8ydtPkBcgwqvKc=",
+      "hash": "sha256-Fxm7+SSo2UgJHUnkLCNMJgoa\/rwyrgkTORoAPwjtb+k=",
       "url": "_framework\/blazor.boot.json"
     },
     {
@@ -33,7 +33,7 @@
       "url": "_framework\/dotnet.native.8.0.33.f9r2agi8sd.js"
     },
     {
-      "hash": "sha256-ZAVEpsMeKL2npK9MefmqrYurbnf9SzoFKvxYoqUP4Xw=",
+      "hash": "sha256-GqUP9f\/duVwqzKUKYi3KvLrTa7LBkdA9kHowFTvntKc=",
       "url": "_framework\/dotnet.native.wasm"
     },
     {
@@ -297,7 +297,7 @@
       "url": "_framework\/UltraDES.wasm"
     },
     {
-      "hash": "sha256-2AqAxjcpyIIpveRX9lPSYnDCoPLsKAm7iWnbWurPdqY=",
+      "hash": "sha256-Y4h3cSv9\/gWLGEQ3u\/BbmsgBVbkeVm9Wnsuo\/XufDa0=",
       "url": "_framework\/UltraDESWeb.wasm"
     },
     {
@@ -485,5 +485,5 @@
       "url": "webfonts\/fa-solid-900.woff2"
     }
   ],
-  "version": "1dg4aVrk"
+  "version": "Vt3s8\/8m"
 };
