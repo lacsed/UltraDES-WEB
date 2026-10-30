@@ -31,7 +31,7 @@ Machine-readable stage medians and sizes are in `performance-results.json`. The 
 
 ## Monolithic synthesis deployment
 
-The GitHub Pages publish command now uses `-p:EnableWasmAot=true`. This project option enables `RunAOTCompilation` only when requested, so normal development builds and tests do not require the AOT workload. The deploy workflow installs `wasm-tools` before publication.
+The GitHub Pages publish command now uses `-p:EnableWasmAot=true`. This project option enables `RunAOTCompilation` only when requested, so normal development builds and tests do not require the AOT workload. The deploy workflow installs `wasm-tools` before publication. `global.json` selects .NET SDK 8.0.427 (allowing later patches in the same feature band), so a newer SDK preinstalled on the runner cannot silently select a different AOT workload.
 
 To reproduce locally:
 
