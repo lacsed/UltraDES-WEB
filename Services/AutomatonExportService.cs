@@ -20,7 +20,7 @@ public sealed class AutomatonExportService
         var source = automaton.Clone();
         var content = format switch
         {
-            "json" => DeterministicFiniteAutomaton.ToJsonString(source),
+            "json" => AutomatonJsonWriter.Write(source),
             "dot" => source.ToDotCode,
             "wmod" => NormalizeXmlEncoding(DeterministicFiniteAutomaton.ToWmodString(
                 specification ? [] : [source], specification ? [source] : [], source.Name)),
