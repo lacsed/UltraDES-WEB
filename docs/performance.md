@@ -64,3 +64,7 @@ Exploration visited 97,620 candidate states. One reachability/nonblocking iterat
 The full application was published locally with AOT. **7 Chromium tests passed against that published static site**, including monolithic synthesis of the Small Factory (6 states, 8 transitions, one marked state), reload persistence, desktop/mobile export, large-export guards and SVG pan/zoom. This validates the actual publish configuration, beyond the isolated benchmark. A separate development-mode synthesis test also passed.
 
 This does not reproduce an unidentified user model that takes minutes. That model is needed before attributing its slowdown to a particular search phase or choosing a deeper algorithm/library change.
+
+## Default localization search budget
+
+`Localized Supervisors` now calls `MonolithicLocalizedSupervisor` with `maxIt: 1_000` instead of 1,000,000. This limits reduction/localization search, not execution time in seconds. It can produce larger controllers. On SDM, the localized closed loop with this budget was checked against the monolithic closed loop and found isomorphic. This change applies to localization only; monolithic synthesis and the separate reduced/modular operations retain their existing parameters.

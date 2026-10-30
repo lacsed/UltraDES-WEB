@@ -92,7 +92,7 @@ else
             {
                 "mon" => new[] {DeterministicFiniteAutomaton.MonolithicSupervisor(p, e)},
                 "monred" => new[] {DeterministicFiniteAutomaton.MonolithicReducedSupervisor(p, e, 100_000_000)},
-                "loc" => DeterministicFiniteAutomaton.MonolithicLocalizedSupervisor(p, e, 1000000),
+                "loc" => DeterministicFiniteAutomaton.MonolithicLocalizedSupervisor(p, e, maxIt: 1_000),
                 "local" => DeterministicFiniteAutomaton.LocalModularSupervisor(p, e),
                 "localred" => DeterministicFiniteAutomaton.LocalModularReducedSupervisor(p, e, 1000000),
                 _ => new DeterministicFiniteAutomaton[0]
