@@ -67,11 +67,11 @@ This does not reproduce an unidentified user model that takes minutes. That mode
 
 ## Default localization search budget
 
-`Localized Supervisors` now calls `MonolithicLocalizedSupervisor` with `maxIt: 1_000` instead of 1,000,000. This limits reduction/localization search, not execution time in seconds. It can produce larger controllers. On SDM, the localized closed loop with this budget was checked against the monolithic closed loop and found isomorphic. This change applies to localization only; monolithic synthesis and the separate reduced/modular operations retain their existing parameters.
+`Localized Supervisors` now calls `MonolithicLocalizedSupervisor` with `maxIt: 10_000` (previously 1,000; originally 1,000,000). This limits reduction/localization search, not execution time in seconds. It can produce larger controllers. On SDM, the localized closed loop with the earlier 1,000-iteration budget was checked against the monolithic closed loop and found isomorphic. This change applies to localization only; monolithic synthesis and the separate reduced/modular operations retain their existing parameters.
 
 ## .NET 10 migration
 
-The current app and test project target `net10.0`; the SDK is 10.0.403 and the Blazor WebAssembly/DevServer packages are 10.0.14. Earlier .NET 8 timings in this document remain historical baseline measurements, not measurements of the migrated app. Both GitHub workflows use `actions/setup-dotnet@v5` with `global-json-file: global.json`; the E2E workflow also runs the .NET test suite. Deploy retains the AOT workload and `EnableWasmAot=true`. The localization default stays at 1,000 iterations and multicore remains disabled.
+The current app and test project target `net10.0`; the SDK is 10.0.403 and the Blazor WebAssembly/DevServer packages are 10.0.14. Earlier .NET 8 timings in this document remain historical baseline measurements, not measurements of the migrated app. Both GitHub workflows use `actions/setup-dotnet@v5` with `global-json-file: global.json`; the E2E workflow also runs the .NET test suite. Deploy retains the AOT workload and `EnableWasmAot=true`. The migration retained the then-current 1,000-iteration localization default; the current default is 10,000 as documented above. Multicore remains disabled.
 
 The native test suite passed all 57 tests on .NET 10, and all 20 browser tests passed. Browser validation corrected stale Structured Text menu/expected-state assertions and exposed a late progress callback overwriting the layout completion message; callbacks now belong to the current active layout operation. These fixes preserve the synthesis algorithms and workspace data format.
 
