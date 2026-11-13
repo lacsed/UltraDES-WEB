@@ -59,6 +59,9 @@ public sealed class AutomatonDraftValidator
         }
 
         var uniqueTransitions = expanded.Distinct().ToArray();
+        var representedStates = uniqueTransitions.SelectMany(t => new[] { t.Origin, t.Destination }).Append(draft.InitialStateId).ToHashSet();
+        foreach (var state in states.Where(state => !representedStates.Contains(state.Id)))
+            errors.Add($"State '{state.Name}' is isolated. Connect it with a transition before creating the automaton.");
         foreach (var group in uniqueTransitions.GroupBy(t => (t.Origin, t.Event)))
             if (group.Select(t => t.Destination).Distinct().Count() > 1)
                 errors.Add($"Nondeterministic transitions from state '{stateIds[group.Key.Origin].Name}' on event '{eventIds[group.Key.Event].Name}' have different destinations.");

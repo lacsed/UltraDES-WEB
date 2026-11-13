@@ -62,9 +62,10 @@ public sealed class WorkspaceStorage(IJSRuntime js)
 public sealed record WorkspaceData(int Version, StateData[] States, EventData[] Events, StoredAutomaton[] Automata);
 public sealed record StoredAutomaton(string Id, string Json, AutomatonLayoutData Layout);
 public sealed record AutomatonLayoutData(double CanvasWidth, double CanvasHeight, double Zoom, double PanX, double PanY,
-    StateLayoutData[] States, TransitionLayoutData[] Transitions);
-public sealed record StateLayoutData(string State, double X, double Y);
-public sealed record TransitionLayoutData(string Source, string Target, string[] Events, double ControlX, double ControlY);
+    StateLayoutData[] States, TransitionLayoutData[] Transitions, bool FitToViewport = false);
+public sealed record StateLayoutData(string State, double X, double Y, double Radius = 30);
+public sealed record TransitionLayoutData(string Source, string Target, string[] Events, double ControlX, double ControlY,
+    double LabelOffsetX = 0, double LabelOffsetY = 0);
 public sealed record StateData(string Alias, Marking Marking);
 public sealed record EventData(string Alias, Controllability Controllability);
 internal sealed record WorkspaceDataV1(StateData[] States, EventData[] Events, string[] Automata);

@@ -1,0 +1,265 @@
+{
+  "date": "2026-10-30",
+  "sdk": "8.0.427",
+  "runtime": "8.0.33",
+  "UltraDES": "2.2.5.1",
+  "browser": "Chromium 156.0.8078.4",
+  "model": "FMS from Index.razor; 8 plants + 8 specifications",
+  "multicore": false,
+  "nonBlocking": true,
+  "method": "One initial round and three measured rounds; medians in ms. No concurrent compilation during final measurements. Controls time only MonolithicSupervisor, excluding JSON/registration/counts/render/storage. Profiling replays private stages in benchmark only; complete output JSON compared with stock synthesis outside timers.",
+  "controls": {
+    "interpreter": {
+      "samples": [
+        {
+          "round": 0,
+          "calc": 4105.135,
+          "register": 303.3149,
+          "count": 1525.84,
+          "serialize": 0,
+          "envelope": 13.86,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 1,
+          "calc": 4214.915,
+          "register": 271.145,
+          "count": 1477.16,
+          "serialize": 0,
+          "envelope": 0.1349,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 2,
+          "calc": 4215.3299,
+          "register": 257.855,
+          "count": 1435.45,
+          "serialize": 0,
+          "envelope": 0.14,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 3,
+          "calc": 4124.635,
+          "register": 247.735,
+          "count": 1441.545,
+          "serialize": 0,
+          "envelope": 0.14,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        }
+      ],
+      "medianSynthesisMs": 4214.915
+    },
+    "aot": {
+      "samples": [
+        {
+          "round": 0,
+          "calc": 2685.9899,
+          "register": 79.5999,
+          "count": 451.305,
+          "serialize": 0,
+          "envelope": 12.295,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 1,
+          "calc": 2075.055,
+          "register": 71.6749,
+          "count": 454.755,
+          "serialize": 0,
+          "envelope": 0.075,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 2,
+          "calc": 2005.4449,
+          "register": 66.715,
+          "count": 457.02,
+          "serialize": 0.0049,
+          "envelope": 0.07,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        },
+        {
+          "round": 3,
+          "calc": 2042.25,
+          "register": 64.2999,
+          "count": 461.61,
+          "serialize": 0,
+          "envelope": 0.0749,
+          "states": 45504,
+          "events": 31,
+          "transitions": 200124,
+          "jsonChars": 0,
+          "payloadChars": 57,
+          "serializationSkipped": true
+        }
+      ],
+      "medianSynthesisMs": 2042.25
+    }
+  },
+  "profiles": {
+    "native": {
+      "samples": [
+        {
+          "round": 0,
+          "composition": 0.8122,
+          "setup": 0.9792,
+          "exploration": 196.8024,
+          "cleanup": 9.9353,
+          "reachable": 105.8078,
+          "nonblocking": 111.746,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 1,
+          "composition": 1.3277,
+          "setup": 0.2899,
+          "exploration": 181.0571,
+          "cleanup": 1.3494,
+          "reachable": 86.8681,
+          "nonblocking": 110.0569,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 2,
+          "composition": 0.4378,
+          "setup": 0.6342,
+          "exploration": 181.8568,
+          "cleanup": 12.8239,
+          "reachable": 82.3345,
+          "nonblocking": 101.2425,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 3,
+          "composition": 0.5932,
+          "setup": 0.3341,
+          "exploration": 196.0335,
+          "cleanup": 2.2896,
+          "reachable": 94.012,
+          "nonblocking": 111.5415,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        }
+      ],
+      "mediansMs": {
+        "composition": 0.593,
+        "setup": 0.334,
+        "exploration": 181.857,
+        "cleanup": 2.29,
+        "reachable": 86.868,
+        "nonblocking": 110.057
+      }
+    },
+    "wasm": {
+      "samples": [
+        {
+          "round": 0,
+          "composition": 8.065,
+          "setup": 2.08,
+          "exploration": 1550.2849,
+          "cleanup": 26.6,
+          "reachable": 864.255,
+          "nonblocking": 1461.875,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 1,
+          "composition": 8.57,
+          "setup": 2.095,
+          "exploration": 1507.075,
+          "cleanup": 24.265,
+          "reachable": 881.855,
+          "nonblocking": 1405.55,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 2,
+          "composition": 6.065,
+          "setup": 3.09,
+          "exploration": 1527.615,
+          "cleanup": 25.78,
+          "reachable": 839.6799,
+          "nonblocking": 1405.31,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        },
+        {
+          "round": 3,
+          "composition": 8.79,
+          "setup": 2.11,
+          "exploration": 1528.825,
+          "cleanup": 23.175,
+          "reachable": 849.29,
+          "nonblocking": 1429.285,
+          "iterations": 1,
+          "explored": 97620,
+          "states": 45504,
+          "matches": true
+        }
+      ],
+      "mediansMs": {
+        "composition": 8.57,
+        "setup": 2.11,
+        "exploration": 1527.615,
+        "cleanup": 24.265,
+        "reachable": 849.29,
+        "nonblocking": 1405.55
+      }
+    }
+  }
+}

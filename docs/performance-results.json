@@ -1,0 +1,131 @@
+{
+  "runtime": ".NET 8.0.33",
+  "sdk": "8.0.427",
+  "library": "UltraDES 2.2.5.1",
+  "browser": "Chromium 156.0.8078.4",
+  "cpuQuota": 2,
+  "units": "milliseconds; UTF-16 string character counts",
+  "method": "median of three repetitions after first round; sequential runs; WASM without AOT",
+  "results": [
+    {
+      "variant": "wasm-before",
+      "scenario": "compose8",
+      "states": 256,
+      "transitions": 2048,
+      "jsonChars": 210813,
+      "calc": 29.515,
+      "serialize": 101.145,
+      "envelope": 6.04
+    },
+    {
+      "variant": "wasm-before",
+      "scenario": "compose12",
+      "states": 4096,
+      "transitions": 49152,
+      "jsonChars": 4976027,
+      "calc": 308.18,
+      "serialize": 18461.11,
+      "envelope": 137.31
+    },
+    {
+      "variant": "wasm-before",
+      "scenario": "fms",
+      "states": 45504,
+      "transitions": 200124,
+      "jsonChars": 0,
+      "calc": 4058.205,
+      "serialize": null,
+      "envelope": null
+    },
+    {
+      "variant": "wasm-after",
+      "scenario": "compose8",
+      "states": 256,
+      "transitions": 2048,
+      "jsonChars": 108681,
+      "calc": 29.705,
+      "serialize": 24.75,
+      "envelope": 3.235
+    },
+    {
+      "variant": "wasm-after",
+      "scenario": "compose12",
+      "states": 4096,
+      "transitions": 49152,
+      "jsonChars": 2632007,
+      "calc": 271.015,
+      "serialize": 409.805,
+      "envelope": 71.845
+    },
+    {
+      "variant": "wasm-after",
+      "scenario": "fms",
+      "states": 45504,
+      "transitions": 200124,
+      "jsonChars": 13245172,
+      "calc": 3895.165,
+      "serialize": 3539.12,
+      "envelope": 352.95
+    },
+    {
+      "variant": "native-before",
+      "scenario": "compose8",
+      "states": 256,
+      "transitions": 2048,
+      "jsonChars": 210813,
+      "calc": 8.101,
+      "serialize": 29.08,
+      "envelope": 1.167
+    },
+    {
+      "variant": "native-before",
+      "scenario": "compose12",
+      "states": 4096,
+      "transitions": 49152,
+      "jsonChars": 4976027,
+      "calc": 47.894,
+      "serialize": 2240.764,
+      "envelope": 23.574
+    },
+    {
+      "variant": "native-before",
+      "scenario": "fms",
+      "states": 45504,
+      "transitions": 200124,
+      "jsonChars": 0,
+      "calc": 371.401,
+      "serialize": null,
+      "envelope": null
+    },
+    {
+      "variant": "native-after",
+      "scenario": "compose8",
+      "states": 256,
+      "transitions": 2048,
+      "jsonChars": 108681,
+      "calc": 7.283,
+      "serialize": 4.053,
+      "envelope": 0.559
+    },
+    {
+      "variant": "native-after",
+      "scenario": "compose12",
+      "states": 4096,
+      "transitions": 49152,
+      "jsonChars": 2632007,
+      "calc": 65.455,
+      "serialize": 38.486,
+      "envelope": 25.082
+    },
+    {
+      "variant": "native-after",
+      "scenario": "fms",
+      "states": 45504,
+      "transitions": 200124,
+      "jsonChars": 13245172,
+      "calc": 354.301,
+      "serialize": 273.051,
+      "envelope": 58.208
+    }
+  ]
+}

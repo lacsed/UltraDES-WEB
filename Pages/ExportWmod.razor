@@ -64,7 +64,8 @@
         try
         {
             await Task.Delay(1);
-            JsRuntime.SaveFile($"system.wmod", DeterministicFiniteAutomaton.ToWmodString(p, e));
+            await JsRuntime.InvokeVoidAsync("saveFile", "system.wmod", AutomatonExportService.NormalizeXmlEncoding(
+                DeterministicFiniteAutomaton.ToWmodString(p, e)), "application/xml;charset=utf-8");
             OnSuccess();
         }
         catch (Exception ex)

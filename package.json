@@ -1,0 +1,16 @@
+{
+  "name": "ultrades-web-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:editor": "node --test tests/unit/*.test.mjs",
+    "browsers:install": "node scripts/playwright.mjs install chromium",
+    "test:e2e": "node scripts/playwright.mjs test",
+    "test:e2e:ui": "node scripts/playwright.mjs test --ui",
+    "test:e2e:report": "node scripts/playwright.mjs show-report",
+    "test:e2e:trace": "node scripts/playwright.mjs show-trace"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

@@ -51,6 +51,9 @@ compressed/
 
 ## Assets de front-end (Tailwind, SASS, bundlers)
 node_modules/
+.cache/
+playwright-report/
+test-results/
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*

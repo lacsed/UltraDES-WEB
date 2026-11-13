@@ -1,0 +1,210 @@
+[
+  {
+    "Name": "ring8",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 6,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 2313.6833050404166,
+      "Area": 123812.44711558992,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 712.3742444214964,
+      "Area": 206755.9630326066,
+      "Symmetry": 0
+    },
+    "Milliseconds": 71
+  },
+  {
+    "Name": "diamond",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 607.9624892354898,
+      "Area": 94300,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 499.54705435880476,
+      "Area": 105133.15490869687,
+      "Symmetry": 0
+    },
+    "Milliseconds": 6
+  },
+  {
+    "Name": "reciprocal-loops",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 2,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 1453.7617987870776,
+      "Area": 122146.60712542597,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 1018.5142234161555,
+      "Area": 133477.49143283366,
+      "Symmetry": 0
+    },
+    "Milliseconds": 10
+  },
+  {
+    "Name": "chord-cycle",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 4,
+      "LabelOverlaps": 3,
+      "Crossings": 20,
+      "EdgeLabelCollisions": 16,
+      "Length": 6145.948640413991,
+      "Area": 385255.78393318265,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 6,
+      "EdgeLabelCollisions": 1,
+      "Length": 7814.493405051465,
+      "Area": 814059.5465725636,
+      "Symmetry": 0
+    },
+    "Milliseconds": 295
+  },
+  {
+    "Name": "layered-branches",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 1481.9194733664885,
+      "Area": 239876.24282632125,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 1346.0563323751428,
+      "Area": 209790,
+      "Symmetry": 0
+    },
+    "Milliseconds": 19
+  },
+  {
+    "Name": "long-labels",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 2,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 445.8305288973677,
+      "Area": 339189.511014718,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 415.6694669692156,
+      "Area": 313592.213306588,
+      "Symmetry": 0
+    },
+    "Milliseconds": 9
+  },
+  {
+    "Name": "disconnected",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 1,
+      "EdgeStateCollisions": 1,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 1086.8743966912514,
+      "Area": 352429.4450122574,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 801.5861542922291,
+      "Area": 228978.33649046547,
+      "Symmetry": 0
+    },
+    "Milliseconds": 7
+  },
+  {
+    "Name": "chain100",
+    "Old": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 13797.084452464287,
+      "Area": 1458694.215955667,
+      "Symmetry": 0
+    },
+    "New": {
+      "StateOverlaps": 0,
+      "StateLabelOverlaps": 0,
+      "EdgeStateCollisions": 0,
+      "LabelOverlaps": 0,
+      "Crossings": 0,
+      "EdgeLabelCollisions": 0,
+      "Length": 9204.475973233359,
+      "Area": 24938070.7583735,
+      "Symmetry": 0
+    },
+    "Milliseconds": 494
+  }
+]

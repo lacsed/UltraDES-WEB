@@ -1,0 +1,10 @@
+.st-selection-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.st-selection-grid .analysis-options { min-width: 0; margin-bottom: .5rem; }
+.st-selection-grid .analysis-chip-grid { grid-template-columns: 1fr; }
+.st-selection-summary { margin-bottom: 1.25rem; color: var(--muted); }
+.st-result { margin-top: 1.5rem; }
+.st-result > p { margin-bottom: .8rem; }
+.st-result .buttons { margin-top: 1rem; }
+.st-result .button { gap: .45rem; }
+.st-code { max-height: 420px; overflow: auto; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #f5f7fb; font: .8rem/1.6 monospace; white-space: pre; tab-size: 4; }
+@media (max-width: 600px) { .st-selection-grid { grid-template-columns: 1fr; gap: 0; } }
