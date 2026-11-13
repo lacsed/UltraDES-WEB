@@ -1,6 +1,7 @@
-﻿@page "/"
+@page "/"
 @using global::UltraDES
 @using System.Threading
+@using System.IO
 @inject IJSRuntime JsRuntime;
 @inject WorkspaceStorage WorkspaceStorage;
 @inject AutomatonLayoutService AutomatonLayoutService;
@@ -55,11 +56,11 @@
                     <button type="button" @onclick="OpenSimulation" class="is-mobile dropdown-item">Simulate Automata</button>
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod" @onchange="@(() => LoadWmodAutomaton("loadwmod"))"><a>Upload Wmod Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson" accept=".json" @onchange="@(() => LoadJsonAutomaton("loadjson"))"><a>Upload Json Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod" accept=".wmod" @onchange="@(() => LoadWmodAutomaton("loadwmod"))"><a>Upload Wmod Automaton</a></label>
                     <button type="button" class="is-mobile dropdown-item" @onclick="() => OpenPage(Page.ExportWmod)">Export Wmod</button>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads" @onchange="@(() => LoadAdsAutomaton("loadads"))"><a>Upload Ads Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml" @onchange="@(() => LoadXmlAutomaton("loadxml"))"><a>Upload XML Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads" accept=".ads" @onchange="@(() => LoadAdsAutomaton("loadads"))"><a>Upload Ads Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml" accept=".xml" @onchange="@(() => LoadXmlAutomaton("loadxml"))"><a>Upload XML Automaton</a></label>
                 </div>
             </div>
         </div>
@@ -97,11 +98,11 @@
                     <a href="petri-nets" class="is-mobile dropdown-item">Petri-net Studio</a>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Import</p>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson_m" @onchange="@(() => LoadJsonAutomaton("loadjson_m"))"><a>Upload Json Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod_m" @onchange="@(() => LoadWmodAutomaton("loadwmod_m"))"><a>Upload Wmod Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadjson_m" accept=".json" @onchange="@(() => LoadJsonAutomaton("loadjson_m"))"><a>Upload Json Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadwmod_m" accept=".wmod" @onchange="@(() => LoadWmodAutomaton("loadwmod_m"))"><a>Upload Wmod Automaton</a></label>
                     <button type="button" class="is-mobile dropdown-item" @onclick="() => OpenPage(Page.ExportWmod)">Export Wmod Automaton</button>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads_m" @onchange="@(() => LoadAdsAutomaton("loadads_m"))"><a>Upload Ads Automaton</a></label>
-                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml_m" @onchange="@(() => LoadXmlAutomaton("loadxml_m"))"><a>Upload XML Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadads_m" accept=".ads" @onchange="@(() => LoadAdsAutomaton("loadads_m"))"><a>Upload Ads Automaton</a></label>
+                    <label class="is-mobile dropdown-item"><input type="file" style="display: none" id="loadxml_m" accept=".xml" @onchange="@(() => LoadXmlAutomaton("loadxml_m"))"><a>Upload XML Automaton</a></label>
                     <hr class="dropdown-divider">
                     <p class="menu-label dropdown-item">Examples</p>
                     <button type="button" @onclick="LoadSmallFactory" class="is-mobile dropdown-item">Small Factory</button>
@@ -123,11 +124,15 @@
             <button class="button is-small ml-3" type="button" @onclick="CancelVisualLayout">Cancel</button>
         </div>
     }
-    <aside class="workspace-sidebar">
+    <aside class="workspace-sidebar" tabindex="0" aria-label="Workspace items">
         <div class="workspace-heading">
             <div><span class="eyebrow">Current project</span><h1>Workspace</h1></div>
             <span class="workspace-total">@(states.Count + events.Count + automata.Count)</span>
         </div>
+        <button type="button" class="button is-danger is-light workspace-clear" @onclick="() => showClearWorkspaceConfirmation = true"
+                disabled="@(!workspaceLoaded || WorkspaceIsEmpty || layoutGenerating || renderingAutomaton)">
+            <i class="fas fa-trash" aria-hidden="true"></i><span>Clear workspace</span>
+        </button>
         <p class="menu-label">States <span class="item-count">@states.Count</span><a class="content-button" @onclick="() => ShowStates = !ShowStates">@((ShowStates) ? "Hide": "Show")</a></p>
         <ul class="menu-list">
             @if (ShowStates)
@@ -315,7 +320,15 @@
                             </button>
                             <button type="button" @onclick="() => SaveAutomaton(selected)">
                                 <i class="fas fa-download" aria-hidden="true"></i>
-                                <span><strong>Download</strong><small>Save this automaton as JSON</small></span>
+                                <span><strong>Download JSON</strong><small>Save this automaton in UltraDES JSON format</small></span>
+                            </button>
+                            <button type="button" @onclick='() => ExportAutomaton(selected, "xml")'>
+                                <i class="fas fa-file-code" aria-hidden="true"></i>
+                                <span><strong>Download XML</strong><small>Export this automaton in XML format</small></span>
+                            </button>
+                            <button type="button" @onclick='() => ExportAutomaton(selected, "ads")'>
+                                <i class="fas fa-file-alt" aria-hidden="true"></i>
+                                <span><strong>Download ADS</strong><small>Export this automaton in ADS format</small></span>
                             </button>
                         </div>
                     </article>
@@ -393,6 +406,15 @@
     </ConfirmationModal>
 }
 
+@if (showClearWorkspaceConfirmation)
+{
+    <ConfirmationModal Title="Clear workspace?" ConfirmText="Delete everything" CancelText="Cancel"
+                       Disabled="@clearingWorkspace" OnConfirm="ClearWorkspaceAsync" OnCancel="() => showClearWorkspaceConfirmation = false">
+        <p>Delete all <strong>@automata.Count automata</strong>, <strong>@states.Count states</strong> and <strong>@events.Count events</strong>, including saved visual layouts?</p>
+        <p>This also clears the workspace saved in this browser. This action cannot be undone.</p>
+    </ConfirmationModal>
+}
+
 <footer class="app-footer">
     <span><strong>UltraDES</strong> · Open-source tools for discrete event systems</span>
     <span>Developed by <a href="https://lacsed.eng.ufmg.br">LACSED</a> at <a href="https://www.ufmg.br">UFMG</a></span>
@@ -432,6 +454,9 @@
     private bool ShowEvents = false;
     private bool ShowAutomata = true;
     private bool workspaceLoaded;
+    private bool showClearWorkspaceConfirmation;
+    private bool clearingWorkspace;
+    private bool WorkspaceIsEmpty => states.Count == 0 && events.Count == 0 && automata.Count == 0;
     private string workspaceError = "";
     private DeterministicFiniteAutomaton confirmationAutomaton;
     private int confirmationStateCount;
@@ -490,6 +515,42 @@
                 return new StoredAutomaton(id, DeterministicFiniteAutomaton.ToJsonString(pair.Value), layout);
             }));
     }
+    private async Task ClearWorkspaceAsync()
+    {
+        if (clearingWorkspace || layoutGenerating || renderingAutomaton) return;
+        clearingWorkspace = true;
+        try
+        {
+            // Save first so a storage failure leaves the current workspace available.
+            await WorkspaceStorage.SaveAsync([], [], []);
+            automata.Clear();
+            states.Clear();
+            events.Clear();
+            automatonIds.Clear();
+            layouts.Clear();
+            automaton = null;
+            selectedAutomatonName = null;
+            activeLayout = null;
+            simulationInitialAutomatonNames = [];
+            confirmationAutomaton = null;
+            confirmationStateCount = 0;
+            automatonStateCount = 0;
+            largeAutomatonConfirmed = false;
+            workspaceError = "";
+            mobileMenuOpen = false;
+            page = Page.Empty;
+        }
+        catch (Exception ex)
+        {
+            workspaceError = $"Could not clear the saved workspace: {ex.Message}";
+        }
+        finally
+        {
+            clearingWorkspace = false;
+            showClearWorkspaceConfirmation = false;
+        }
+    }
+
     private void Clear()
     {
         page = Page.Empty;
@@ -755,40 +816,85 @@
 
     private void SaveAutomaton(DeterministicFiniteAutomaton G)
     {
-        JsRuntime.SaveFile($"{G.Name}.json", DeterministicFiniteAutomaton.ToJsonString(G));
+        JsRuntime.SaveFile($"{G.Name}.json", DeterministicFiniteAutomaton.ToJsonString(new[] { G }));
+    }
+
+    private async Task ExportAutomaton(DeterministicFiniteAutomaton G, string format)
+    {
+        try
+        {
+            switch (format)
+            {
+                case "xml":
+                    await JsRuntime.InvokeVoidAsync("saveFile", $"{G.Name}.xml", G.ToXML);
+                    break;
+                case "ads":
+                    // UltraDES exposes ADS export as a file writer. Blazor WebAssembly
+                    // can use its in-memory filesystem to capture that output as text.
+                    var temporaryPath = $"/ads-export-{Guid.NewGuid():N}.ads";
+                    try
+                    {
+                        G.ToAdsFile(temporaryPath);
+                        var contents = await File.ReadAllTextAsync(temporaryPath);
+                        await JsRuntime.InvokeVoidAsync("saveFile", $"{G.Name}.ads", contents);
+                    }
+                    finally
+                    {
+                        if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            workspaceError = $"Could not export {G.Name} as {format.ToUpperInvariant()}: {ex.Message}";
+            StateHasChanged();
+        }
     }
 
     private async Task LoadJsonAutomaton(string name)
     {
-        var json = await JsRuntime.ReadFile(name);
-        var aut = DeterministicFiniteAutomaton.FromJsonString(json);
-        AddAutomaton(aut);
-        StateHasChanged();
+        await ImportFile(name, async content => AddAutomaton(DeterministicFiniteAutomaton.FromJsonString(content)));
     }
 
     private async Task LoadWmodAutomaton(string name)
     {
-        var wmod = await JsRuntime.ReadFile(name);
-        DeterministicFiniteAutomaton.FromWmodString(wmod, out var p, out var e);
-        AddAutomaton(p);
-        AddAutomaton(e);
-        StateHasChanged();
+        await ImportFile(name, content =>
+        {
+            DeterministicFiniteAutomaton.FromWmodString(content, out var plants, out var specs);
+            return Task.FromResult(AddAutomaton(plants.Concat(specs)));
+        });
     }
 
     private async Task LoadAdsAutomaton(string name)
     {
-        var ads = await JsRuntime.ReadFile(name);
-        var aut = DeterministicFiniteAutomaton.FromAdsString(ads);
-        AddAutomaton(new []{aut});
-        StateHasChanged();
+        await ImportFile(name, content => Task.FromResult(AddAutomaton(new[] { DeterministicFiniteAutomaton.FromAdsString(content) })));
     }
 
     private async Task LoadXmlAutomaton(string name)
     {
-        var xml = await JsRuntime.ReadFile(name);
-        var aut = DeterministicFiniteAutomaton.FromXMLString(xml);
-        AddAutomaton(new[] { aut });
-        StateHasChanged();
+        await ImportFile(name, content => Task.FromResult(AddAutomaton(new[] { DeterministicFiniteAutomaton.FromXMLString(content) })));
+    }
+
+    private async Task ImportFile(string inputId, Func<string, Task<bool>> importer)
+    {
+        workspaceError = "";
+        try
+        {
+            var content = await JsRuntime.ReadFile(inputId);
+            if (string.IsNullOrWhiteSpace(content))
+                throw new InvalidOperationException("The selected file is empty.");
+            await importer(content);
+        }
+        catch (Exception ex)
+        {
+            workspaceError = $"Could not import the selected file: {ex.Message}";
+        }
+        finally
+        {
+            await JsRuntime.InvokeVoidAsync("resetFileInput", inputId);
+            StateHasChanged();
+        }
     }
 
     private void LoadSmallFactory()

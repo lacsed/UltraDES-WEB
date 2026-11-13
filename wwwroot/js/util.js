@@ -1,16 +1,17 @@
 ﻿function saveFile(filename, content) {
     const a = document.createElement("a");
-    const file = new Blob([content], { type: "text/plain" });
+    const file = new Blob([content], { type: "application/octet-stream;charset=utf-8" });
     a.href = URL.createObjectURL(file);
-    a.download = filename.replace(/[^a-zA-Z0-9\.]/g, '_');
+    a.download = filename.replace(/[\\/:*?"<>|]/g, '_');
     a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 async function readFile(name) {
    
     const input = document.getElementById(name);
-    const files = input.files;
-    var file = files[0];
+    const file = input?.files?.[0];
+    if (!file) throw new Error("Choose a file to import.");
     var reader = new FileReader();
 
     return await new Promise((resolve, reject) => {
@@ -23,6 +24,11 @@ async function readFile(name) {
 
         reader.readAsText(file);
     });
+}
+
+function resetFileInput(name) {
+    const input = document.getElementById(name);
+    if (input) input.value = "";
 }
 
 function downloadSVG(fileName, dot) {
@@ -50,6 +56,7 @@ function downloadPNG(fileName, dot) {
 
 window.saveFile = saveFile;
 window.readFile = readFile;
+window.resetFileInput = resetFileInput;
 window.GraphViz = dot => Viz(dot);
 window.downloadPNG = downloadPNG;
 window.downloadSVG = downloadSVG;

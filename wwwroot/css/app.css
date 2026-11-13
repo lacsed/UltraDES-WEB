@@ -29,6 +29,7 @@ button:disabled, .button:disabled { cursor: not-allowed; opacity: .52; }
         'footer';
     display: grid;
     min-height: 100vh;
+    height: 100dvh;
 }
 
 .grid-header {
@@ -78,7 +79,8 @@ footer {
 
 .app-main { display: grid; grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); min-height: 0; }
 .app-main > .notification { position: fixed; z-index: 45; top: 84px; right: 1rem; max-width: min(520px, calc(100vw - 2rem)); box-shadow: 0 12px 35px rgb(0 0 0 / 16%); }
-.workspace-sidebar { padding: 2rem 1.5rem; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); }
+.workspace-sidebar { min-width: 0; min-height: 0; padding: 2rem 1.5rem; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; background: var(--surface); border-right: 1px solid var(--line); }
+.workspace-clear { width: 100%; gap: .5rem; }
 .workspace-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
 .workspace-heading h1 { margin: .15rem 0 0; font-size: 1.55rem; font-weight: 750; letter-spacing: -.04em; }
 .eyebrow { color: var(--primary); font-size: .7rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
@@ -95,7 +97,7 @@ footer {
 .automaton-catalog-item strong, .automaton-catalog-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .automaton-catalog-item small { margin-top: .15rem; color: var(--muted); font-size: .7rem; }
 .automaton-catalog-item.is-active { color: var(--primary-dark); background: #eef5ff; box-shadow: inset 3px 0 var(--primary); }
-.workspace-content { min-width: 0; padding: clamp(1.25rem, 4vw, 4rem); overflow: auto; }
+.workspace-content { min-width: 0; min-height: 0; padding: clamp(1.25rem, 4vw, 4rem); overflow: auto; }
 
 .welcome-panel { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; width: 100%; max-width: 1240px; min-height: 100%; margin: auto; }
 .welcome-copy h2 { max-width: 720px; margin: .8rem 0 1.1rem; font-size: clamp(2.25rem, 5vw, 4.8rem); font-weight: 800; line-height: 1.02; letter-spacing: -.06em; }
@@ -259,7 +261,7 @@ footer {
 }
 
 @media (max-width: 600px) {
-    .grid-container { display: flex; min-height: 100vh; flex-direction: column; }
+    .grid-container { display: flex; min-height: 100vh; min-height: 100dvh; height: auto; flex-direction: column; }
     .app-navbar { min-height: 60px; flex-direction: column; align-items: stretch; }
     .app-navbar .navbar-brand { display: flex; min-height: 60px; justify-content: space-between; }
     .app-brand img { width: 38px; }
@@ -271,7 +273,7 @@ footer {
     .mobile-navigation .dropdown-menu { display: block; position: static; padding: 0; }
     .mobile-navigation .dropdown-content { max-height: 65vh; overflow-y: auto; box-shadow: none; }
     .app-main { display: flex; flex: 1; flex-direction: column; }
-    .workspace-sidebar { flex: none; padding: 1rem; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); }
+    .workspace-sidebar { flex: none; padding: 1rem; overflow: visible; scrollbar-gutter: auto; border-right: 0; border-bottom: 1px solid var(--line); }
     .workspace-heading { margin-bottom: .5rem; }.workspace-heading .eyebrow { display: none; }.workspace-heading h1 { font-size: 1.2rem; }
     .workspace-sidebar .menu-label { display: inline-flex; width: calc(33.333% - .3rem); margin: .5rem 0 0; justify-content: center; font-size: .65rem; }
     .workspace-sidebar .menu-label .content-button { display: none; }

@@ -61,6 +61,39 @@
         }
     </section>
 
+    <section class="summary-section">
+        <button type="button" class="summary-toggle" aria-expanded="@showDisabledEvents" @onclick="() => showDisabledEvents = !showDisabledEvents">
+            <span><i class="fas fa-ban"></i><strong>Disabled events by state</strong><small>All events and controllable events only</small></span>
+            <i class="fas @(showDisabledEvents ? "fa-chevron-up" : "fa-chevron-down")" aria-hidden="true"></i>
+        </button>
+        @if (showDisabledEvents)
+        {
+            var events = Automaton.Events.OrderBy(item => item.ToString(), StringComparer.Ordinal).ToArray();
+            var enabledByState = Automaton.Transitions
+                .GroupBy(transition => transition.Origin)
+                .ToDictionary(group => group.Key, group => group.Select(transition => transition.Trigger).ToHashSet());
+
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped">
+                    <caption>Events in this automaton's alphabet without an outgoing transition from the state. — means none.</caption>
+                    <thead><tr><th scope="col">State</th><th scope="col">Disabled events</th><th scope="col">Disabled controllable events</th></tr></thead>
+                    <tbody>
+                        @foreach (var state in Automaton.States.OrderBy(item => item.ToString(), StringComparer.Ordinal))
+                        {
+                            var disabled = events.Where(item => !enabledByState.TryGetValue(state, out var enabled) || !enabled.Contains(item)).ToArray();
+                            var controllable = disabled.Where(item => item.IsControllable).ToArray();
+                            <tr>
+                                <th scope="row">@state</th>
+                                <td>@(disabled.Length == 0 ? "—" : string.Join(", ", disabled.Select(item => item.ToString())))</td>
+                                <td>@(controllable.Length == 0 ? "—" : string.Join(", ", controllable.Select(item => item.ToString())))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
     <details class="dot-details"><summary>DOT source</summary><pre><code>@Automaton.ToDotCode</code></pre></details>
 </div>
 
@@ -70,4 +103,5 @@
     private bool showStates;
     private bool showEvents;
     private bool showTransitions;
+    private bool showDisabledEvents;
 }
