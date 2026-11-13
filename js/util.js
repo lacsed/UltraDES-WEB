@@ -2,7 +2,7 @@
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
     a.href = url;
-    a.download = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    a.download = filename.replace(/[\\/:*?"<>|]/g, '_');
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -11,13 +11,14 @@
 
 function saveFile(filename, content, contentType = "text/plain;charset=utf-8") {
     downloadBlob(filename, new Blob([content], { type: contentType }));
+
 }
 
 async function readFile(name) {
    
     const input = document.getElementById(name);
-    const files = input.files;
-    var file = files[0];
+    const file = input?.files?.[0];
+    if (!file) throw new Error("Choose a file to import.");
     var reader = new FileReader();
 
     return await new Promise((resolve, reject) => {
@@ -32,9 +33,24 @@ async function readFile(name) {
     });
 }
 
+function resetFileInput(name) {
+    const input = document.getElementById(name);
+    if (input) input.value = "";
+}
+
+function downloadSVG(fileName, dot) {
+    const content = Viz(dot, { format: 'svg', engine: 'dot', scale: undefined, totalMemory: 1024 * 1024 * 1024, files: undefined, images: undefined });
+    const a = document.createElement('a');
+    const file = new Blob([content], { type: 'text/plain' });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+}
+
 async function exportAutomatonImage(fileName, dot, format) {
     const svg = Viz(dot, { format: 'svg', engine: 'dot' });
     return downloadRenderedAutomatonImage(fileName, svg, format);
+
 }
 
 async function downloadRenderedAutomatonImage(fileName, svg, format) {
@@ -72,6 +88,7 @@ function downloadPNG(fileName, dot) { return exportAutomatonImage(fileName, dot,
 
 window.saveFile = saveFile;
 window.readFile = readFile;
+window.resetFileInput = resetFileInput;
 window.GraphViz = dot => Viz(dot);
 window.downloadPNG = downloadPNG;
 window.downloadSVG = downloadSVG;
